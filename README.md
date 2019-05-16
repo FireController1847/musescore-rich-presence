@@ -11,3 +11,13 @@ Discord Rich Presence for MuseScore
 4. Run rpc.js (`node src/rpc.js`)
 
 Tada! I'm looking forward to refining this and making it work better in the future.
+
+## Examples
+\* This Rich Presence includes active states, meaning your state will constantly change to show more information (similar to my other Rich Presence for American Trucking Simulator (ATS)). Below shows an example for each one of those.
+
+![](https://i.imgur.com/fPKKteE.png)  
+![](https://i.imgur.com/OnaBi5m.png)  
+![](https://i.imgur.com/dhVm2ZE.png)  
+![](https://i.imgur.com/e45SDcX.png)  
+![](https://i.imgur.com/usmmLbB.png)  
+![](https://i.imgur.com/aWgurbw.png)
