@@ -15,7 +15,7 @@ async function update() {
     const apps = await fp("name", "MuseScore");
     let app;
     for (let i = 0; i < apps.length; i++) {
-        if (["MuseScore.exe"].includes(apps[i].name)) {
+        if (["MuseScore.exe", "MuseScore2.exe", "MuseScore3.exe"].includes(apps[i].name)) {
             app = apps[i];
             break;
         }
@@ -76,7 +76,7 @@ async function update() {
             smallImageKey: "musescore3-circle",
             largeImageText: window.sheet.mscoreVersion ? `MuseScore ${window.sheet.mscoreVersion}` : "MuseScore",
             smallImageText: `Contains ${window.sheet.nmeasures} Measures`
-        }); 
+        });
     } else {
         client.setActivity({
             details: "Musescore",
