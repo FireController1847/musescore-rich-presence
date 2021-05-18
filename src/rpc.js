@@ -36,9 +36,9 @@ async function update() {
                 const curr = JSON.parse(fs.readFileSync(currDir));
                 // console.log(curr);
                 window.sheet = curr;
-                if (window.sheet.name != lastfile) {
+                if (window.sheet.scoreName != lastfile) {
                     start = new Date();
-                    lastfile = window.sheet.name;
+                    lastfile = window.sheet.scoreName;
                 }
             } catch(e) {
                 console.log("X Unable to read ScoreInfo.json! Is the file corrupt?")
