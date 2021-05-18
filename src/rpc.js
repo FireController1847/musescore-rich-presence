@@ -30,7 +30,7 @@ async function update() {
         }
     }
     if (window) {
-        const currDir = path.join(window.owner.path, "../../Plugins/curr.json");
+        const currDir = path.join(window.owner.path, "../../ScoreInfo.json");
         if (fs.existsSync(currDir)) {
             try {
                 const curr = JSON.parse(fs.readFileSync(currDir));
