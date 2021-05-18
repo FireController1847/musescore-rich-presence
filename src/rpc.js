@@ -41,10 +41,10 @@ async function update() {
                     lastfile = window.sheet.name;
                 }
             } catch(e) {
-                console.log("X Unable to read curr.json! Is the file corrupt?")
+                console.log("X Unable to read ScoreInfo.json! Is the file corrupt?")
             }
         } else {
-            console.log("X Whoops! I wasn't able to find the curr.json. Did you install the CurrentScoreInfo MuseScore plugin?");
+            console.log("X Whoops! I wasn't able to find the ScoreInfo.json. Did you install the CurrentScoreInfo MuseScore plugin?");
         }
     }
 
@@ -69,7 +69,7 @@ async function update() {
         if (stateindex >= states.length) stateindex = 0;
 
         client.setActivity({
-            details: `Editing ${window.sheet.name}`,
+            details: `Editing ${window.sheet.scoreName}`,
             state: states[stateindex],
             startTimestamp: start,
             largeImageKey: "musescore3-square",
