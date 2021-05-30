@@ -6,15 +6,17 @@ Discord Rich Presence for MuseScore
 
 ### MuseScore 3
 1. Install the CurrentScoreInfo-MS3.qml Plugin Into MuseScore
-2. When inside MuseScore, enable the plugin. Then click on the button once under Plugins -> CurrentScoreInfo to run it.
-3. Clone this repository and install node modules (`npm i`)
-4. Run rpc.js (`node src/rpc.js`)
+2. Open MuseScore and ensure to **run it as an administrator**!
+3. When inside MuseScore, enable the plugin. Then click on the button once under Plugins -> CurrentScoreInfo to run it.
+4. Clone this repository and install node modules (`npm i`)
+5. Run rpc.js (`node src/rpc.js`)
 
 ### MuseScore 2
 1. Install the CurrentScoreInfo-MS2.qml Plugin Into MuseScore
-2. When inside MuseScore, enable the plugin. Then click on the button once under Plugins -> CurrentScoreInfo to run it.
-3. Clone this repository and install node modules (`npm i`)
-4. Run rpc.js (`node src/rpc.js`)
+2. Open MuseScore and ensure to **run it as an administrator**!
+3. When inside MuseScore, enable the plugin. Then click on the button once under Plugins -> CurrentScoreInfo to run it.
+4. Clone this repository and install node modules (`npm i`)
+5. Run rpc.js (`node src/rpc.js`)
 
 Tada! I'm looking forward to refining this and making it work better in the future.
 
