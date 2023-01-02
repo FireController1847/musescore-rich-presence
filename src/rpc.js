@@ -15,7 +15,7 @@ async function update() {
     const apps = await fp("name", "MuseScore");
     let app;
     for (let i = 0; i < apps.length; i++) {
-        if (["MuseScore.exe", "MuseScore2.exe", "MuseScore3.exe"].includes(apps[i].name)) {
+        if (["MuseScore.exe", "MuseScore2.exe", "MuseScore3.exe", "MuseScore4.exe"].includes(apps[i].name)) {
             app = apps[i];
             break;
         }
@@ -48,6 +48,19 @@ async function update() {
         }
     }
 
+    let largeImageKey = "musescore-square";
+    let smallImageKey = "musescore-circle";
+    let appTitle = "MuseScore";
+    if (app.name == "MuseScore3.exe") {
+        largeImageKey = "musescore3-square";
+        smallImageKey = "musescore3-circle";
+        appTitle = "MuseScore 3";
+    } else if (app.name == "MuseScore4.exe") {
+        largeImageKey = "musescore4-square";
+        smallImageKey = "musescore4-circle";
+        appTitle = "MuseScore 4";
+    }
+
     if (window && window.sheet || app && !window && sheetcache) {
         if (window && window.sheet) sheetcache = window.sheet;
         else if (sheetcache) {
@@ -72,9 +85,9 @@ async function update() {
             details: `Editing ${window.sheet.scoreName}`,
             state: states[stateindex],
             startTimestamp: start,
-            largeImageKey: "musescore3-square",
-            smallImageKey: "musescore3-circle",
-            largeImageText: window.sheet.mscoreVersion ? `MuseScore ${window.sheet.mscoreVersion}` : "MuseScore",
+            largeImageKey: largeImageKey,
+            smallImageKey: smallImageKey,
+            largeImageText: appTitle,
             smallImageText: `Contains ${window.sheet.nmeasures} Measures`
         });
     } else {
@@ -82,9 +95,9 @@ async function update() {
             details: "Musescore",
             state: "Unknown",
             startTimestamp: start,
-            largeImageKey: "musescore3-square",
-            smallImageKey: "musescore3-circle",
-            largeImageText: "MuseScore 3",
+            largeImageKey: largeImageKey,
+            smallImageKey: smallImageKey,
+            largeImageText: appTitle,
             smallImageText: "Composing"
         });
     }

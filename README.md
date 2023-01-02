@@ -4,19 +4,29 @@ Discord Rich Presence for MuseScore
 ## Usage Instrctions
 \* Adding support for Mac should be really easy, but I don't own a Mac to test it on.
 
+### MuseScore 4
+1. Install Node.js ([Direct Link](https://nodejs.org/en/))
+2. Install the `CurrentScore-MS4.qml` AND `current_score_info.png` Plugin Into MuseScore 4 ([Handbook](https://musescore.org/en/handbook/3/plugins#installation))
+3. Open MuseScore 4 and ensure to **run it as an administrator**!
+4. When inside MuseScore 4, enable the plugin. Then click on the button once under Plugins -> CurrentScoreInfo to run it.
+5. Clone this repository and install node modules (`npm i`)
+6. Run rpc.js (`node src/rpc.js`)
+
 ### MuseScore 3
-1. Install the CurrentScoreInfo-MS3.qml Plugin Into MuseScore
-2. Open MuseScore and ensure to **run it as an administrator**!
-3. When inside MuseScore, enable the plugin. Then click on the button once under Plugins -> CurrentScoreInfo to run it.
-4. Clone this repository and install node modules (`npm i`)
-5. Run rpc.js (`node src/rpc.js`)
+1. Install Node.js ([Direct Link](https://nodejs.org/en/))
+2. Install the `CurrentScoreInfo-MS3.qml` Plugin Into MuseScore 3 ([Handbook](https://musescore.org/en/handbook/3/plugins#installation))
+3. Open MuseScore 3 and ensure to **run it as an administrator**!
+4. When inside MuseScore 3, enable the plugin. Then click on the button once under Plugins -> CurrentScoreInfo to run it.
+5. Clone this repository and install node modules (`npm i`)
+6. Run rpc.js (`node src/rpc.js`)
 
 ### MuseScore 2
-1. Install the CurrentScoreInfo-MS2.qml Plugin Into MuseScore
-2. Open MuseScore and ensure to **run it as an administrator**!
-3. When inside MuseScore, enable the plugin. Then click on the button once under Plugins -> CurrentScoreInfo to run it.
-4. Clone this repository and install node modules (`npm i`)
-5. Run rpc.js (`node src/rpc.js`)
+1. Install Node.js ([Direct Link](https://nodejs.org/en/))
+2. Install the `CurrentScoreInfo-MS2.qml` Plugin Into MuseScore 2 ([Handbook](https://musescore.org/en/handbook/2/plugins#installation))
+3. Open MuseScore 2 and ensure to **run it as an administrator**!
+4. When inside MuseScore 2, enable the plugin. Then click on the button once under Plugins -> CurrentScoreInfo to run it.
+5. Clone this repository and install node modules (`npm i`)
+6. Run rpc.js (`node src/rpc.js`)
 
 Tada! I'm looking forward to refining this and making it work better in the future.
 
