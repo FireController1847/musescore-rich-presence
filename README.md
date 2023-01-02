@@ -1,7 +1,7 @@
-# MuseScore Rich presence
-Discord Rich Presence for MuseScore
+# MuseScore Rich Presence
+This MuseScore plugin allows users to showcase their current score on their Discord profile through Rich Presence integration. Information such as the score's title, author, composer, and number of measures will be displayed, providing a convenient way for others to see what you're working on and get a glimpse into your musical endeavors. With this plugin, you can easily share your musical creations with your Discord community and showcase your talents to the world.
 
-## Usage Instrctions
+## Installation & Usage
 \* Adding support for Mac should be really easy, but I don't own a Mac to test it on.
 
 ### MuseScore 4
@@ -28,14 +28,14 @@ Discord Rich Presence for MuseScore
 5. Clone this repository and install node modules (`npm i`)
 6. Run rpc.js (`node src/rpc.js`)
 
-Tada! I'm looking forward to refining this and making it work better in the future.
-
 ## Examples
-\* This Rich Presence includes active states, meaning your state will constantly change to show more information (similar to my other Rich Presence for American Trucking Simulator (ATS)). Below shows an example for each one of those.
+\* This plugin uses Active States. Active States is a feature that rotates between multiple rich presence details, creating a dynamic and informative experience for anyone viewing the user's profile.
 
-![](https://i.imgur.com/fPKKteE.png)  
-![](https://i.imgur.com/OnaBi5m.png)  
-![](https://i.imgur.com/dhVm2ZE.png)  
-![](https://i.imgur.com/e45SDcX.png)  
-![](https://i.imgur.com/usmmLbB.png)  
-![](https://i.imgur.com/aWgurbw.png)
+![](https://i.imgur.com/9jbFAto.png)  
+![](https://i.imgur.com/jDGESp9.png)  
+![](https://i.imgur.com/Z7xH5ku.png)  
+![](https://i.imgur.com/7sWW6Rw.png)  
+![](https://i.imgur.com/pJ2ACGV.png)  
+  
+![](https://i.imgur.com/4QCRN4D.png)
+![](https://i.imgur.com/bDRqdES.png)
