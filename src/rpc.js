@@ -89,7 +89,7 @@ async function update() {
             smallImageKey: smallImageKey,
             largeImageText: appTitle,
             smallImageText: `Contains ${window.sheet.nmeasures} Measures`
-        });
+        }, (app.pid || null));
     } else {
         client.setActivity({
             details: "Musescore",
@@ -99,7 +99,7 @@ async function update() {
             smallImageKey: smallImageKey,
             largeImageText: appTitle,
             smallImageText: "Composing"
-        });
+        }, (app.pid || null));
     }
 }
 
