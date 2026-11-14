@@ -1,0 +1,81 @@
+# AGENTS.md
+
+## Project and workflow
+
+- MuseScore Rich Presence integrates MuseScore Studio with Discord. Keep the public README human-oriented: installation, usage, features, troubleshooting, AI disclosure, and licensing. Put implementation details here.
+- The native implementation is developed on `embedded`; `master` contains the original Node.js implementation.
+- Favor small, maintainable changes. Keep QML responsible for score information and activity formatting, and C++ responsible for native integration.
+- Preserve the maintainer's Git identity and append `Co-authored-by: Codex <noreply@openai.com>` to agent-created commits.
+- Do not create tests or custom CI workflows. Builds are permitted; manual verification belongs to the maintainer. Report 2–3 or fewer concise verification items and disclose unverified behavior.
+- Preserve the README title, feature cards, and AI disclosure unless explicitly requested otherwise.
+
+## Architecture
+
+| Path | Responsibility |
+| --- | --- |
+| `src/plugin/RichPresence.qml` | Plugin entry point, active score tracking, selection/transport state, metadata, rotation, Discord activity payloads. |
+| `src/plugin/DiscordIPC/qmldir` | Native QML module declaration. |
+| `src/native/discordipc.cpp`, `discordipc.h` | Qt singleton, settings, native UI discovery, playback snapshot, text decoding, Discord IPC. |
+| `src/native/plugin.cpp` | QML module registration. |
+| `src/native/StatusButton.qml`, `SettingsWindow.qml`, `statusbar.qrc` | Status-bar integration and persistent preference UI. |
+| `CMakeLists.txt`, `CMakePresets.json`, `.vscode/` | Build, staging and automatic deployment. |
+
+The QML plugin loads the native module on invocation rather than discovery. Only the first instance owns monitoring; subsequent invocations toggle activity. MuseScore's legacy plugin manager has no automatic startup hook. The native module locates the notation status bar and playback toolbar through the host's Qt/QML objects, so internal host changes may require compatibility fixes.
+
+Discord IPC uses `QLocalSocket` directly, including socket discovery, handshake, framing, reconnection, deduplication and activity cleanup. Do not introduce Node.js, intermediate JSON files, external companion processes or administrator requirements. Socket discovery supports Windows and Unix; the maintainer has verified Discord activity on macOS only.
+
+## Activity contract
+
+When playback is enabled, active transport takes precedence over selection. Otherwise, any selection (including non-staff text) means Editing; no selection means Viewing. No open score clears activity by default or displays Browsing scores if configured.
+
+| Viewing | Editing | Playing / Listening |
+| --- | --- | --- |
+| Filename | Filename | System · Page |
+| Title | Title | Dynamics · BPM |
+| Subtitle | Subtitle | Key · Time signature |
+| Lyricist | Lyricist | Instrument |
+| Composer | Composer | |
+| Measures · Systems | Measure · Track | |
+| Tracks · Pages | Dynamics · BPM | |
+| | Key · Time signature | |
+| | Instrument | |
+
+- Viewing and Editing headlines use `Viewing <title>...` and `Editing <title>...`; playback uses the title alone. Filename sharing is opt-in, including headline fallback. Display metadata without prefixes. Skip disabled or unavailable fields; join paired values with ` · `. Default rotation: 5 seconds, configurable 5–60 seconds.
+- Listening uses Discord type 2, with the title in `name` and `details`, author credit in `state`, and rotating playback statistics in `assets.large_text` (Discord renders this as the third text line). Do not restore the static MuseScore 4 caption in Listening. Playing without a progress bar uses type 0 and the normal rotating state.
+- Use the `musescore4` large asset. No small image assets are currently used. Preserve existing sharing preferences, elapsed session timestamps, and playback start/end timestamps synchronized with the transport. Reset the elapsed timer when changing scores.
+- Prefer visible heading text in leading vertical frames (MuseScore 4.6+) over non-placeholder metadata. Decode rich text and flatten CRLF, CR, LF, Unicode line separators and encoded newlines to spaces; preserve consecutive logical line breaks as consecutive spaces. Bound Discord text to 128 characters without splitting a surrogate pair.
+- Playback uses MuseScore 4.7's internal transport model. It is score-wide, so select the first chord track at or before the current position within the measure, falling back to a rest track for staff-specific information. Editing uses the selection. Track numbers are one-based MuseScore voice-track indices.
+- Count musical systems across the score, excluding frame-only systems. Use the local key and time signature; if no mode is specified, show relative major/minor possibilities rather than inventing a key. Dynamics use full names for the latest explicit sustained marking, not interpolated volume, hairpins or transient accents.
+- Keep the settings UI and defaults synchronized with activity changes; preferences are persisted through QSettings. Preserve the fallback status window for native module load or status-bar discovery failures.
+
+## Build and deployment
+
+Requires CMake 3.21+, Ninja, C++17, and the host-compatible Qt SDK with Core, Network, Qml and Quick.
+
+```powershell
+cmake --preset dev
+cmake --build --preset dev
+```
+
+The `dev` preset uses a Release build in `build/`, stages to `dist/`, and enables automatic deployment. The VS Code default Build task configures and builds; **Install plugin (MuseScore user directory)** is an alias. Close MuseScore before replacing its loaded library.
+
+```text
+dist/MuseScoreRichPresence/
+├── RichPresence.qml
+├── current_score_info.png
+└── DiscordIPC/
+    ├── qmldir
+    └── libDiscordIPC.dylib
+```
+
+The library extension varies by platform. The default destination is `Documents/MuseScore4/Plugins/MuseScoreRichPresence/` under the user's home/profile.
+
+- `CMAKE_PREFIX_PATH`: custom Qt SDK location; on macOS the build otherwise detects the Qt major/minor version from the MuseScore app bundle and searches `~/Qt`.
+- `MUSESCORE_APP`: override the macOS MuseScore app bundle used for Qt detection.
+- `MUSESCORE_PLUGINS_DIR`: override the user plugins directory in a local CMake cache or user preset.
+- `MUSESCORE_AUTO_DEPLOY=OFF`: packaging-only build; use the staged directory.
+- macOS selects the active Xcode compiler. Preserve the SDK 27.2 / Apple Clang 21 fallback to SDK 26.5 when installed; explicit compiler and SDK settings take precedence.
+
+## Verification
+
+A successful build or Plugins Manager listing does not prove that the native module loaded. Check the status icon, Discord activity and MuseScore logs prefixed with `MuseScore Rich Presence`. Verify selection transitions, playback layout and preference changes in the actual host when relevant. Do not claim untested platform support.

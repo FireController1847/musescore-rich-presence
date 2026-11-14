@@ -74,64 +74,78 @@ Whether you're composing, arranging, or transcribing, your Discord profile can r
 
 <p align="center"><em>Examples from the original implementation, showcasing rotating score information.</em></p>
 
-## Architecture
-
-The plugin reads score information directly from MuseScore using QML. A small native Qt extension handles Discord IPC using `QLocalSocket`, including connection discovery, handshake, framing, reconnection, and activity cleanup.
-
-| QML | Native Qt extension |
-| :--- | :--- |
-| Score tracking and elapsed time | Discord socket discovery |
-| Active States and activity payloads | IPC handshake and frame processing |
-| Enable/disable toggle | Activity publication and reconnection |
-
-No Node.js, intermediate JSON files, external companion processes, or administrator privileges are required by the new design. The native extension must be built for the Qt version and architecture used by MuseScore. Windows and Unix socket discovery are implemented, but platform compatibility remains unverified.
-
 ## Installation
+
+The native plugin targets MuseScore Studio 4.7 and requires Discord Desktop. It runs directly inside MuseScore without Node.js or an external companion application.
 
 ### Build from source
 
-Requires CMake 3.21+, Ninja, a C++17 compiler, and a Qt development SDK with Core, Network, Qml, and Quick matching your MuseScore installation.
+You'll need CMake 3.21 or newer, Ninja, a C++17 compiler, and a Qt development SDK matching the version and architecture bundled with MuseScore.
 
-Open the folder in VS Code and install the recommended CMake Tools extension. CMake configures automatically using the `dev` preset; **Build** (or the default Build task) stages the plugin into `dist/` and automatically deploys it to the MuseScore user plugins directory. Quit MuseScore before building so the native library is not in use.
-
-On macOS, the build detects MuseScore's bundled Qt major/minor version and searches the standard `~/Qt` SDK directory. Install the matching SDK once if needed. For example, for MuseScore using Qt 6.10.2:
+On macOS, the build looks for the matching Qt SDK in `~/Qt`. For example, if MuseScore uses Qt 6.10.2, you can install it with:
 
 ```powershell
 uvx --from aqtinstall aqt install-qt mac desktop 6.10.2 clang_64 -O "$HOME/Qt"
 ```
 
-A custom Qt SDK can be selected with `-DCMAKE_PREFIX_PATH=/path/to/qt`. The macOS configuration also selects the active Xcode compiler and works around the known SDK 27.2 / Clang 21 mismatch when SDK 26.5 is installed. Existing custom build settings take precedence.
-
-Outside VS Code:
+Close MuseScore before building. In VS Code, install the recommended CMake Tools extension and run the default **Build** task, or use the command line:
 
 ```powershell
 cmake --preset dev
 cmake --build --preset dev
 ```
 
-The staged plugin directory contains:
+The build stages the plugin in `dist/MuseScoreRichPresence/` and automatically installs it in your user plugins directory (normally `Documents/MuseScore4/Plugins/`).
 
-```text
-dist/MuseScoreRichPresence/
-├── RichPresence.qml
-├── current_score_info.png
-└── DiscordIPC/
-    ├── qmldir
-    └── libDiscordIPC.dylib
-```
+If your installation uses a different Qt SDK or plugins directory, see [build configuration](AGENTS.md#build-and-deployment).
 
-The native library has a platform-specific extension. The development preset automatically installs the entire plugin into `~/Documents/MuseScore4/Plugins/MuseScoreRichPresence/` (on Windows, under your user profile's Documents folder). The VS Code **Install plugin (MuseScore user directory)** task is an alias for the normal build.
+### Enable the plugin
 
-If MuseScore preferences specify a different plugins directory, set `MUSESCORE_PLUGINS_DIR` in your local CMake cache or user preset. For a packaging-only build, configure with `-DMUSESCORE_AUTO_DEPLOY=OFF` and use the staged directory in `dist/`.
+1. Open Discord Desktop and make sure activity sharing is enabled.
+2. Open MuseScore and enable **Discord Rich Presence** in the Plugins Manager.
+3. Select **Discord Rich Presence** from the Plugins menu.
 
-Quit MuseScore before replacing the native library. Open Discord Desktop, restart MuseScore, enable the plugin in the Plugins Manager, and invoke **Discord Rich Presence** from the Plugins menu. A Discord icon appears in MuseScore's notation status bar after activation. The monochrome outline follows the application theme: a full-opacity icon indicates accepted activity, a dimmed outline indicates waiting or connecting, and a diagonal slash indicates disabled. Hover for the current status, click to toggle Rich Presence, or right-click for tabbed settings. Preferences are saved automatically and take effect immediately. Filename sharing defaults to off. Activity uses the visible title in the score's leading text frame (MuseScore 4.6+), then non-placeholder title metadata, and falls back to a .mscz filename only if filename sharing is enabled. Subtitle, lyricist and composer use the same visible-heading-first approach. With playback stopped, any selection shows Editing; no selection shows Viewing. Both rotate raw filename (opt-in), title, subtitle, lyricist and composer. Viewing adds paired measure/system and track/page totals. Editing rotates measure/track, dynamics/tempo, key/time signature and instrument at the current position. Playback rotates system/page, dynamics/tempo, key/time signature and instrument. Playing omits the metadata rotation. Playback uses MuseScore 4.7's transport model; since it is score-wide, the position uses a representative notation track (the first chord track at or before the current position within the measure, or a rest track). Track numbers are MuseScore voice-track indices, displayed from one. A key signature without a specified mode shows the relative major/minor possibilities. Missing information is skipped. Listening retains the title, author credit, rotating third line and synchronized progress bar; turn off the bar to use Playing instead. Pausing or stopping returns to Editing or Viewing according to selection. Dynamics are the latest sustained notation markings, not interpolated audio loudness; hairpins and transient accents are not reported as sustained levels. Text line breaks are flattened to spaces. The top-level Plugins menu action also toggles it. A status dialog remains available if the native module fails to load or the notation bar cannot be found. The integration uses MuseScore's internal notation status-bar layout and may require adjustment for future versions.
-
-MuseScore requires the plugin to be invoked once per application session. After activation, it automatically publishes when a score is opened or selected, clears activity when no score is open by default, and resets the elapsed timer for a different score. MuseScore's plugin manager does not provide an automatic startup hook for legacy QML plugins.
-
-If the plugin is missing from the Plugins Manager, check the configured plugins directory, select all categories, and check both enabled and optional plugins. If no activity appears, hover over the status icon (or inspect the fallback status window) and MuseScore's application logs for `MuseScore Rich Presence` messages. Listing the plugin in the manager alone does not establish that its native module loaded. Check that Discord activity sharing is enabled and that the Qt SDK version and architecture match MuseScore.
+The plugin needs to be started once each time you launch MuseScore. After that, it follows your active score automatically.
 
 > [!NOTE]
 > For the original Windows implementation and its installation instructions, see the [master branch](https://github.com/FireController1847/musescore-rich-presence/tree/master).
+
+## Using Rich Presence
+
+Once enabled, a Discord icon appears in the notation status bar:
+
+- **Click** to enable or disable Rich Presence.
+- **Right-click** to open settings.
+- **Hover** to see the connection status.
+
+A dimmed icon indicates that the plugin is waiting or connecting; a crossed-out icon indicates that it is disabled.
+
+### Activity
+
+Your Discord presence changes automatically depending on what you're doing:
+
+| Activity | What Discord displays |
+| :--- | :--- |
+| Viewing | Score information and totals when nothing is selected. |
+| Editing | Score information and musical details at your selection. |
+| Listening | Score title, author, live musical details, and a playback progress bar. |
+| Playing | Live musical details without a progress bar, when the bar is disabled. |
+
+When no score is open, your activity is hidden by default. You can choose to show that you're browsing scores instead.
+
+### Personalize your presence
+
+Right-click the Discord icon to choose which score details appear, how often they rotate, and whether to show elapsed time or playback progress. Changes are saved automatically.
+
+The plugin prefers the title and credits printed on your score. Filename sharing is off by default, and unavailable information is skipped. During playback, musical details refer to a representative instrument in the score.
+
+## Troubleshooting
+
+- **Plugin missing:** Check MuseScore's configured plugins directory and enable all categories in the Plugins Manager.
+- **No Discord activity:** Make sure Discord Desktop is running and activity sharing is enabled. Hover over the status icon to check the connection.
+- **Plugin fails to start:** Verify that the Qt SDK matches MuseScore's Qt version and architecture. MuseScore's logs contain messages prefixed with `MuseScore Rich Presence`.
+
+For development and implementation details, see [AGENTS.md](AGENTS.md).
 
 ## AI Assisted Development
 
