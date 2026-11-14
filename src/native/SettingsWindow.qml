@@ -48,7 +48,7 @@ ApplicationWindow {
                 PreferenceCheck { text: "Show playback state"; preferenceKey: "playback" }
                 PreferenceCheck { text: "Show elapsed time"; preferenceKey: "elapsed" }
                 Label {
-                    text: "Playing scores use a separate activity and live playback statistics. Pausing or stopping returns to editing."
+                    text: "Playing scores use a separate activity. Pausing or stopping returns to editing."
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
                     opacity: 0.7
@@ -84,7 +84,7 @@ ApplicationWindow {
                 PreferenceCheck { text: "Current tempo (BPM)"; preferenceKey: "playTempo" }
                 PreferenceCheck { text: "Show playback progress bar"; preferenceKey: "playProgress" }
                 Label {
-                    text: "Discord uses Listening activities for progress bars. Turn this off to use the Playing activity type instead."
+                    text: "Listening shows the score title, author and progress bar. Turn off the progress bar to show rotating playback statistics in the Playing activity instead."
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
                     opacity: 0.7

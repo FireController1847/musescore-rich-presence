@@ -408,7 +408,7 @@ MuseScore {
                     states.push("Dynamics: " + editLevel)
             }
 
-        } else {
+        } else if (!listening) {
             var location = []
             if (prefs.playMeasure && playback.measure > 0)
                 location.push("Measure " + playback.measure)
@@ -451,21 +451,20 @@ MuseScore {
             stateIndex = 0
             playbackStateText = ""
         }
-        // Override the application name for Listening, giving the score
-        // its own headline without a repeated MuseScore or Playing prefix.
+        // Listening uses the music layout: title, author, and progress.
+        // Discord also renders large_text as an album line in this layout.
         if (listening) {
-            activity.name = bounded(displayName || "Untitled score")
-            var extra = (prefs.subtitle && subtitle) || (prefs.composer && (composer || author)) || ""
-            var rotating = activity.state || ""
-            delete activity.details
+            var listeningTitle = bounded(displayName || "Untitled score")
+            activity.name = listeningTitle
+            activity.details = listeningTitle
             delete activity.state
-            if (extra) {
-                activity.details = bounded(extra)
-                if (rotating)
-                    activity.state = rotating
-            } else if (rotating) {
-                activity.details = rotating
-            }
+            delete activity.assets.large_text
+
+            // A visible subtitle can contain the arrangement credit.
+            var subtitleCredit = prefs.subtitle && /\bby\b/i.test(subtitle) ? subtitle : ""
+            var credit = prefs.composer ? (author || subtitleCredit || composer) : ""
+            if (credit)
+                activity.state = bounded(credit)
         }
         refreshPlaybackText = false
 
