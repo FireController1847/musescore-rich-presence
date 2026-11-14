@@ -23,7 +23,7 @@
 </p>
 
 > [!IMPORTANT]
-> The project is undergoing a redesign to eliminate the external Node.js dependency. The embedded implementation is not yet ready for general use. The existing implementation is available on the [master branch](https://github.com/FireController1847/musescore-rich-presence/tree/master).
+> The native implementation is experimental and targets MuseScore 4. It has not yet been validated in a running MuseScore installation. The original Node.js implementation remains available on the [master branch](https://github.com/FireController1847/musescore-rich-presence/tree/master).
 
 ## About
 
@@ -74,22 +74,55 @@ Whether you're composing, arranging, or transcribing, your Discord profile can r
 
 <p align="center"><em>Examples from the original implementation, showcasing rotating score information.</em></p>
 
-## Development Status
+## Architecture
 
-The next generation of MuseScore Rich Presence aims to simplify installation and run directly within MuseScore.
+The plugin reads score information directly from MuseScore using QML. A small native Qt extension handles Discord IPC using `QLocalSocket`, including connection discovery, handshake, framing, reconnection, and activity cleanup.
 
-| Current Implementation | Embedded Implementation (Planned) |
+| QML | Native Qt extension |
 | :--- | :--- |
-| QML plugin and external Node.js process | Self-contained MuseScore plugin |
-| Intermediate JSON file | Direct access to score information |
-| Windows-specific process detection | Platform-independent score tracking |
-| Manual companion process startup | Integrated activity management |
+| Score tracking and elapsed time | Discord socket discovery |
+| Active States and activity payloads | IPC handshake and frame processing |
+| Enable/disable toggle | Activity publication and reconnection |
 
-Cross-platform Discord communication is a development goal and remains subject to validation.
+No Node.js, intermediate JSON files, external companion processes, or administrator privileges are required by the new design. The native extension must be built for the Qt version and architecture used by MuseScore. Windows and Unix socket discovery are implemented, but platform compatibility remains unverified.
 
 ## Installation
 
-Installation instructions will be updated once the embedded implementation is available.
+### Build from source
+
+Requires CMake 3.16+, a C++17 compiler, and a Qt development SDK with Core, Network, and Qml matching your MuseScore installation. Do not assume that the newest Qt SDK is compatible with the bundled Qt runtime.
+
+On macOS, use the Xcode Command Line Tools and a matching Qt SDK. To identify the bundled Qt version and architecture, inspect the installed application (adjust the application path as needed):
+
+```powershell
+$app = "/Applications/MuseScore 4.app"
+& /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$app/Contents/Frameworks/QtCore.framework/Resources/Info.plist"
+& file "$app/Contents/Frameworks/QtCore.framework/QtCore"
+```
+
+Configure, build, and stage the plugin with the matching SDK. Replace the example Qt SDK path with your actual installation:
+
+```powershell
+cmake -S . -B build "-DCMAKE_PREFIX_PATH=$HOME/Qt/6.x.y/macos" -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
+cmake --install build --config Release --prefix "$PWD/dist"
+```
+
+The staged plugin directory contains:
+
+```text
+dist/MuseScoreRichPresence/
+├── RichPresence.qml
+└── DiscordIPC/
+    ├── qmldir
+    └── libDiscordIPC.dylib
+```
+
+The native library has a platform-specific extension. Copy the entire `MuseScoreRichPresence` directory into your MuseScore user plugins directory (shown in MuseScore's preferences). Preserve the directory structure.
+
+Open Discord Desktop, restart MuseScore, enable the plugin in the Plugins Manager, and invoke **Discord Rich Presence** from the Plugins menu. Invoke it again to disable presence.
+
+If MuseScore cannot load the native module, check that its Qt version and architecture match the SDK used to build the extension. Native module loading in the installed application is the first compatibility milestone.
 
 > [!NOTE]
 > For the original Windows implementation and its installation instructions, see the [master branch](https://github.com/FireController1847/musescore-rich-presence/tree/master).

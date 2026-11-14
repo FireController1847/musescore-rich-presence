@@ -1,0 +1,3 @@
+module DiscordIPC
+plugin DiscordIPC
+classname DiscordIPCPlugin
