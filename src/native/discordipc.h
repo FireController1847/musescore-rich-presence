@@ -34,6 +34,7 @@ public:
     QVariantMap preferences() const { return m_preferences; }
     Q_INVOKABLE void setPreference(const QString &key, const QVariant &value);
     Q_INVOKABLE QVariantMap playbackSnapshot() const;
+    Q_INVOKABLE QString plainScoreText(const QString &text) const;
     Q_INVOKABLE void openSettings();
     Q_INVOKABLE bool initializeMonitor(const QString &clientId);
     Q_INVOKABLE void start(const QString &clientId);

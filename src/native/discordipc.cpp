@@ -18,6 +18,7 @@
 #include <QQmlEngine>
 #include <QAbstractItemModel>
 #include <QTime>
+#include <QTextDocumentFragment>
 
 namespace {
 constexpr quint32 Handshake = 0;
@@ -88,6 +89,15 @@ void DiscordIPC::setPreference(const QString &key, const QVariant &value)
     m_preferences.insert(key, next);
     m_settings.setValue(key, next);
     emit preferencesChanged();
+}
+
+QString DiscordIPC::plainScoreText(const QString &text) const
+{
+    // MuseScore's Text property uses XML-style rich text. Remove formatting
+    // and decode escaped characters before publishing the visible heading.
+    if (!text.contains(QLatin1Char('<')) && !text.contains(QLatin1Char('&')))
+        return text.simplified();
+    return QTextDocumentFragment::fromHtml(text).toPlainText().simplified();
 }
 
 QVariantMap DiscordIPC::playbackSnapshot() const

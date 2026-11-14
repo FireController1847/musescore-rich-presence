@@ -156,6 +156,42 @@ MuseScore {
         }
     }
 
+    function scoreHeading(score, style, metadata, placeholders) {
+        // The title printed on the score is a styled Text element in a
+        // leading vertical frame, independent of the workTitle meta tag.
+        // MeasureBase.prev and frame.elements are exposed since MuseScore 4.6.
+        var visibleText = ""
+        try {
+            var first = score.firstMeasure
+            var frame = first ? first.prev : null
+            while (frame) {
+                if (frame.type === Element.VBOX) {
+                    var elements = frame.elements
+                    for (var i = 0; i < elements.length; i++) {
+                        var element = elements[i]
+                        if (element.type === Element.TEXT && Number(element.subStyle) === Number(style)) {
+                            var text = discord.plainScoreText(String(element.text || ""))
+                            if (text && placeholders.indexOf(text.toLowerCase()) === -1) {
+                                // Traversing backwards makes the topmost frame win.
+                                visibleText = text
+                                break
+                            }
+                        }
+                    }
+                }
+                frame = frame.prev
+            }
+        } catch (error) {
+            // Older MuseScore versions may not expose frame traversal.
+            // Fall back to meaningful metadata rather than failing presence.
+        }
+        if (visibleText)
+            return visibleText
+
+        var fallback = String(metadata || "").trim()
+        return placeholders.indexOf(fallback.toLowerCase()) === -1 ? fallback : ""
+    }
+
     function updateActivity() {
         if (!monitoring || !discord || !discord.enabled)
             return
@@ -220,9 +256,11 @@ MuseScore {
             activityMode = "Editing"
         }
 
-        var title = String(score.title || score.metaTag("workTitle") || "").trim()
-        var subtitle = String(score.metaTag("subtitle") || "").trim()
-        var composer = String(score.composer || score.metaTag("composer") || "").trim()
+        var title = scoreHeading(score, Tid.TITLE, score.title || score.metaTag("workTitle"),
+                                 ["untitled score", "untitled", "title"])
+        var subtitle = scoreHeading(score, Tid.SUBTITLE, score.metaTag("subtitle"), ["subtitle"])
+        var composer = scoreHeading(score, Tid.COMPOSER, score.composer || score.metaTag("composer"),
+                                    ["composer / arranger", "composer", "arranger"])
         var filename = name.replace(/\\/g, "/").split("/").pop()
         if (!/\.mscz$/i.test(filename))
             filename = filename.replace(/\.mscx$/i, "") + ".mscz"
