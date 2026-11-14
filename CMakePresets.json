@@ -16,16 +16,54 @@
       "name": "release",
       "displayName": "Publish release",
       "inherits": "dev",
-      "binaryDir": "${sourceDir}/build/release-macos",
+      "binaryDir": "${sourceDir}/build/release-${hostSystemName}",
+      "condition": {
+        "type": "inList",
+        "string": "${hostSystemName}",
+        "list": [
+          "Darwin",
+          "Windows"
+        ]
+      },
+      "cacheVariables": {
+        "MUSESCORE_AUTO_DEPLOY": "OFF",
+        "MUSESCORE_PACKAGE_RELEASE": "ON"
+      }
+    },
+    {
+      "name": "release-vcpkg",
+      "displayName": "Publish Windows release (vcpkg)",
+      "inherits": "release",
+      "binaryDir": "${sourceDir}/build/release-vcpkg",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
-        "rhs": "Darwin"
+        "rhs": "Windows"
       },
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
-        "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64",
-        "MUSESCORE_AUTO_DEPLOY": "OFF",
-        "MUSESCORE_PACKAGE_MACOS": "ON"
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "VCPKG_HOST_TRIPLET": "x64-windows",
+        "VCPKG_APPLOCAL_DEPS": "OFF",
+        "VCPKG_MANIFEST_MODE": "ON"
+      }
+    },
+    {
+      "name": "dev-vcpkg",
+      "displayName": "Develop on Windows (vcpkg)",
+      "inherits": "dev",
+      "binaryDir": "${sourceDir}/build/dev-vcpkg",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "VCPKG_HOST_TRIPLET": "x64-windows",
+        "VCPKG_APPLOCAL_DEPS": "OFF",
+        "VCPKG_MANIFEST_MODE": "ON"
       }
     }
   ],
@@ -40,6 +78,17 @@
       "targets": [
         "publish"
       ]
+    },
+    {
+      "name": "release-vcpkg",
+      "configurePreset": "release-vcpkg",
+      "targets": [
+        "publish"
+      ]
+    },
+    {
+      "name": "dev-vcpkg",
+      "configurePreset": "dev-vcpkg"
     }
   ]
 }

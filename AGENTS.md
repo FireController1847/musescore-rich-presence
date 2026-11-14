@@ -65,24 +65,44 @@ dist/MuseScoreRichPresence/
     └── libDiscordIPC.dylib
 ```
 
-The library extension varies by platform. The default destination is `Documents/MuseScore4/Plugins/MuseScoreRichPresence/` under the user's home/profile.
+The library is `libDiscordIPC.dylib` on macOS and `DiscordIPC.dll` on Windows. The default destination is `Documents/MuseScore4/Plugins/MuseScoreRichPresence/` under the user's home/profile.
 
-- `CMAKE_PREFIX_PATH`: custom Qt SDK location; on macOS the build otherwise detects the Qt major/minor version from the MuseScore app bundle and searches `~/Qt`.
+- `CMAKE_PREFIX_PATH`: custom Qt SDK location. macOS detects the Qt major/minor version from the MuseScore app bundle and searches `~/Qt`; Windows looks for Qt 6.10.2 MSVC x64 in `QTDIR`, `%USERPROFILE%/Qt`, or `C:/Qt` unless a custom SDK/toolchain is selected.
 - `MUSESCORE_APP`: override the macOS MuseScore app bundle used for Qt detection.
 - `MUSESCORE_PLUGINS_DIR`: override the user plugins directory in a local CMake cache or user preset.
 - `MUSESCORE_AUTO_DEPLOY=OFF`: packaging-only build; use the staged directory.
 - macOS selects the active Xcode compiler. Preserve the SDK 27.2 / Apple Clang 21 fallback to SDK 26.5 when installed; explicit compiler and SDK settings take precedence.
 
-### macOS release packaging
+### Windows development
+
+Install Visual Studio 2022 Build Tools with Desktop development with C++, a Windows SDK, CMake and Ninja. Run the commands from an x64 Developer PowerShell (launch VS Code from it if using tasks). The official Qt 6.10.2 MSVC x64 SDK is preferred to match MuseScore 4.7. For example:
+
+```powershell
+uvx --from aqtinstall aqt install-qt windows desktop 6.10.2 win64_msvc2022_64 -O "$HOME/Qt"
+cmake --preset dev
+cmake --build --preset dev
+```
+
+Alternatively, use vcpkg with the repository manifest. It pins the 2026.03.18 baseline containing Qt 6.10.2 and uses the shared `x64-windows` triplet, so the module can link against host Qt. Set up vcpkg once in a separate directory:
+
+```powershell
+git clone --branch 2026.03.18 https://github.com/microsoft/vcpkg.git "$HOME/vcpkg"
+& "$HOME/vcpkg/bootstrap-vcpkg.bat" -disableMetrics
+$env:VCPKG_ROOT = "$HOME/vcpkg"
+```
+
+From the plugin repository, configure and build with `dev-vcpkg` or `release-vcpkg`. CMake's vcpkg toolchain installs dependencies automatically. The vcpkg Qt build can take substantial time; its runtime compatibility with MuseScore has not been established. Never redistribute vcpkg Qt or its dependency DLLs alongside the plugin; the host supplies Qt. The presets disable vcpkg app-local dependency copying. Official Qt is preferred for public releases until the alternative is verified.
+
+### Release packaging
 
 ```powershell
 cmake --preset release
 cmake --build --preset release
 ```
 
-The `release` preset (macOS only) uses a separate build directory, disables user-directory deployment, and targets both Apple Silicon and Intel by default. The matching Qt SDK must support both architectures. To target one architecture, override `CMAKE_OSX_ARCHITECTURES` at configure time (e.g. `cmake --preset release -DCMAKE_OSX_ARCHITECTURES=arm64`). The VS Code **Publish plugin** task performs both steps. The release build's explicit `publish` target runs CPack after staging; it is also part of the default release build. Normal `dev` builds do not publish.
+The `release` preset works on macOS and Windows, uses a separate build directory, and disables user-directory deployment. Windows targets MSVC x64; macOS targets both Apple Silicon and Intel by default. The macOS Qt SDK must support both architectures. To target one architecture, override `CMAKE_OSX_ARCHITECTURES` at configure time (e.g. `cmake --preset release -DCMAKE_OSX_ARCHITECTURES=arm64`). The VS Code **Publish plugin** task performs both steps. The release build's explicit `publish` target runs CPack after staging; it is also part of the default release build. Normal `dev` builds do not publish.
 
-CMake stages the complete plugin in `dist/MuseScoreRichPresence/`; CPack independently packages the install manifest into `dist/MuseScoreRichPresence-<version>-macos-universal.zip` (or `-macos-arm64.zip` / `-macos-x64.zip`) with a matching `.sha256` checksum. The ZIP contains the top-level plugin folder and license, without Qt frameworks. Sign and verify the installed dylib ad hoc (`codesign --force --sign -`) after install-time RPATH changes, including the isolated CPack install. Do not sign only the build-tree binary. A signature failure must fail packaging. Ad-hoc signing is not Developer ID signing or notarization; downloaded plugins may still encounter Gatekeeper or host library validation. The maintainer verifies the archive in MuseScore before manually attaching it to a GitHub Release.
+CMake stages the complete plugin in `dist/MuseScoreRichPresence/`; CPack independently packages the install manifest into `dist/MuseScoreRichPresence-<version>-macos-universal.zip` (or `-macos-arm64.zip` / `-macos-x64.zip`) on macOS and `dist/MuseScoreRichPresence-<version>-windows-x64.zip` on Windows, with matching `.sha256` checksums. To publish using vcpkg on Windows, run `cmake --preset release-vcpkg` and `cmake --build --preset release-vcpkg`, or the corresponding VS Code task. The ZIP contains the top-level plugin folder and license, without Qt frameworks. On macOS only, sign and verify the installed dylib ad hoc (`codesign --force --sign -`) after install-time RPATH changes, including the isolated CPack install. Do not sign only the build-tree binary. A signature failure must fail packaging. Ad-hoc signing is not Developer ID signing or notarization; downloaded plugins may still encounter Gatekeeper or host library validation. The maintainer verifies the archive in MuseScore before manually attaching it to a GitHub Release.
 
 ## Verification
 

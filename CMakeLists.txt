@@ -1,4 +1,11 @@
 cmake_minimum_required(VERSION 3.21)
+
+option(MUSESCORE_PACKAGE_RELEASE "Create a distributable release ZIP" OFF)
+# Set the default architecture before compiler detection, only on macOS.
+if(CMAKE_HOST_APPLE AND MUSESCORE_PACKAGE_RELEASE
+   AND NOT DEFINED CMAKE_OSX_ARCHITECTURES AND "$ENV{CMAKE_OSX_ARCHITECTURES}" STREQUAL "")
+    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "macOS release architectures")
+endif()
 # Select the active Xcode compiler, not an unrelated Command Line Tools SDK.
 # Only apply the known 27.2 SDK fallback when no SDK was explicitly selected.
 if(CMAKE_HOST_APPLE)
@@ -51,6 +58,20 @@ if(APPLE AND NOT CMAKE_PREFIX_PATH AND NOT Qt6_DIR AND NOT Qt5_DIR)
     endif()
 endif()
 
+# MuseScore Studio 4.7 ships Qt 6.10.2. Prefer the matching official
+# MSVC SDK on Windows unless a custom path or toolchain was supplied.
+if(WIN32 AND NOT CMAKE_PREFIX_PATH AND NOT Qt6_DIR AND NOT CMAKE_TOOLCHAIN_FILE
+   AND "$ENV{CMAKE_PREFIX_PATH}" STREQUAL "" AND "$ENV{Qt6_DIR}" STREQUAL "")
+    foreach(_qt_root "$ENV{QTDIR}" "$ENV{USERPROFILE}/Qt/6.10.2/msvc2022_64"
+            "C:/Qt/6.10.2/msvc2022_64")
+        if(EXISTS "${_qt_root}/lib/cmake/Qt6/Qt6Config.cmake")
+            list(APPEND CMAKE_PREFIX_PATH "${_qt_root}")
+            message(STATUS "Using MuseScore-compatible Qt SDK: ${_qt_root}")
+            break()
+        endif()
+    endforeach()
+endif()
+
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/dist" CACHE PATH "Plugin staging directory" FORCE)
 endif()
@@ -60,8 +81,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Network Qml Quick)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Network Qml Quick)
+if(WIN32)
+    if(NOT MSVC OR NOT CMAKE_CXX_COMPILER_ARCHITECTURE_ID MATCHES "^(x64|X64|AMD64|amd64)$")
+        message(FATAL_ERROR "Windows builds require an x64 MSVC-compatible compiler. Use the VS 2022 x64 Developer PowerShell.")
+    endif()
+    find_package(Qt6 6.10.2 EXACT REQUIRED COMPONENTS Core Network Qml Quick)
+    set(QT_VERSION_MAJOR 6)
+else()
+    find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Network Qml Quick)
+    find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Network Qml Quick)
+endif()
 
 add_library(DiscordIPC MODULE
     src/native/discordipc.cpp
@@ -76,6 +105,9 @@ target_link_libraries(DiscordIPC PRIVATE
     Qt${QT_VERSION_MAJOR}::Quick
 )
 
+if(MSVC)
+    target_compile_options(DiscordIPC PRIVATE /utf-8)
+endif()
 if(APPLE)
     set_target_properties(DiscordIPC PROPERTIES
         SUFFIX ".dylib"
@@ -95,10 +127,9 @@ install(FILES src/plugin/RichPresence.qml src/plugin/current_score_info.png LICE
 
 # Release packaging signs the installed binary, after CMake applies its
 # install RPATH. This also runs in CPack's isolated installation directory.
-option(MUSESCORE_PACKAGE_MACOS "Create a distributable macOS ZIP" OFF)
-if(MUSESCORE_PACKAGE_MACOS)
-    if(NOT APPLE OR NOT CMAKE_HOST_APPLE)
-        message(FATAL_ERROR "macOS release packaging requires a macOS host and target.")
+if(MUSESCORE_PACKAGE_RELEASE AND APPLE)
+    if(NOT CMAKE_HOST_APPLE)
+        message(FATAL_ERROR "macOS release packaging requires a macOS host.")
     endif()
     find_program(CODESIGN_EXECUTABLE codesign REQUIRED)
     install(CODE "
@@ -143,20 +174,28 @@ endif()
 
 # CPack packages the install manifest, not the shared development staging
 # directory, so stale files and unrelated builds cannot leak into the ZIP.
-if(MUSESCORE_PACKAGE_MACOS)
-    if("arm64" IN_LIST CMAKE_OSX_ARCHITECTURES AND "x86_64" IN_LIST CMAKE_OSX_ARCHITECTURES)
-        set(_package_arch universal)
-    elseif(CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
-        set(_package_arch arm64)
-    elseif(CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64")
+if(MUSESCORE_PACKAGE_RELEASE)
+    if(APPLE)
+        set(_package_platform macos)
+        if("arm64" IN_LIST CMAKE_OSX_ARCHITECTURES AND "x86_64" IN_LIST CMAKE_OSX_ARCHITECTURES)
+            set(_package_arch universal)
+        elseif(CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
+            set(_package_arch arm64)
+        elseif(CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64")
+            set(_package_arch x64)
+        else()
+            message(FATAL_ERROR "Set CMAKE_OSX_ARCHITECTURES to arm64, x86_64, or arm64;x86_64 for packaging.")
+        endif()
+    elseif(WIN32)
+        set(_package_platform windows)
         set(_package_arch x64)
     else()
-        message(FATAL_ERROR "Set CMAKE_OSX_ARCHITECTURES to arm64, x86_64, or arm64;x86_64 for packaging.")
+        message(FATAL_ERROR "Release packaging currently supports macOS and Windows.")
     endif()
     set(CPACK_GENERATOR ZIP)
     set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
     set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
-    set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}-macos-${_package_arch}")
+    set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}-${_package_platform}-${_package_arch}")
     set(CPACK_PACKAGE_DIRECTORY "${CMAKE_SOURCE_DIR}/dist")
     set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
     set(CPACK_PACKAGE_CHECKSUM SHA256)

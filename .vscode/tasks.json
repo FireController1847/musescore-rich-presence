@@ -57,6 +57,30 @@
             "problemMatcher": [
                 "$gcc"
             ]
+        },
+        {
+            "label": "Configure Windows release (vcpkg)",
+            "type": "process",
+            "command": "cmake",
+            "args": [
+                "--preset",
+                "release-vcpkg"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Publish Windows release (vcpkg)",
+            "type": "process",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "release-vcpkg"
+            ],
+            "dependsOn": "Configure Windows release (vcpkg)",
+            "problemMatcher": [
+                "$gcc"
+            ]
         }
     ]
 }

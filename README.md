@@ -88,6 +88,8 @@ On macOS, the build looks for the matching Qt SDK in `~/Qt`. For example, if Mus
 uvx --from aqtinstall aqt install-qt mac desktop 6.10.2 clang_64 -O "$HOME/Qt"
 ```
 
+On Windows, install Visual Studio 2022 Build Tools with Desktop development with C++ and the Qt 6.10.2 MSVC 64-bit SDK. Run builds from an x64 Developer PowerShell. The SDK can also be installed using vcpkg; see [Windows build setup](AGENTS.md#windows-development).
+
 Close MuseScore before building. In VS Code, install the recommended CMake Tools extension and run the default **Build** task, or use the command line:
 
 ```powershell
@@ -97,7 +99,7 @@ cmake --build --preset dev
 
 The build stages the plugin in `dist/MuseScoreRichPresence/` and automatically installs it in your user plugins directory (normally `Documents/MuseScore4/Plugins/`).
 
-If your installation uses a different Qt SDK or plugins directory, see [build configuration](AGENTS.md#build-and-deployment). To create a distributable macOS ZIP in `dist/` instead of installing locally, run the VS Code **Publish plugin** task or use the [release preset](AGENTS.md#macos-release-packaging).
+If your installation uses a different Qt SDK or plugins directory, see [build configuration](AGENTS.md#build-and-deployment). To create a distributable macOS or Windows ZIP in `dist/` instead of installing locally, run the VS Code **Publish plugin** task or use the [release preset](AGENTS.md#release-packaging). Windows runtime compatibility is not yet verified.
 
 ### Enable the plugin
 
