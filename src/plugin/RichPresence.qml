@@ -598,15 +598,15 @@ MuseScore {
             assets: {
                 large_image: "musescore4",
                 large_text: "MuseScore 4",
-                small_image: playing ? "play" : (mode === "Editing" ? "pause" : "view")
+                small_image: playing ? "play" : (mode === "Editing" ? "edit" : "view")
             },
             instance: false
         }
         // Flatten each credit independently, then insert only the intentional
         // line separators between the enabled and available fields.
         var credits = [prefs.subtitle ? subtitle : "",
-                       prefs.lyricist ? lyricist : "",
-                       prefs.composer ? composer : ""]
+                       prefs.composer ? composer : "",
+                       prefs.lyricist ? lyricist : ""]
         var hoverLines = []
         for (var i = 0; i < credits.length; i++) {
             var line = singleLine(credits[i])

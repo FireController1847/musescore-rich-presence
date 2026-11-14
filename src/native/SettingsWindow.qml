@@ -62,14 +62,14 @@ ApplicationWindow {
                 PreferenceCheck { text: "Score title in headline"; preferenceKey: "title" }
                 PreferenceCheck { text: "Use filename when title is unavailable"; preferenceKey: "filename" }
                 PreferenceCheck { text: "Subtitle"; preferenceKey: "subtitle" }
-                PreferenceCheck { text: "Lyricist"; preferenceKey: "lyricist" }
                 PreferenceCheck { text: "Composer / author"; preferenceKey: "composer" }
+                PreferenceCheck { text: "Lyricist"; preferenceKey: "lyricist" }
                 PreferenceCheck { text: "Measure count"; preferenceKey: "measures" }
                 PreferenceCheck { text: "System count"; preferenceKey: "systems" }
                 PreferenceCheck { text: "Staff count"; preferenceKey: "staves" }
                 PreferenceCheck { text: "Page count"; preferenceKey: "pages" }
                 Label {
-                    text: "Score totals rotate while viewing. Subtitle, lyricist and composer appear in the small icon tooltip. The filename is used only when no title is available."
+                    text: "Score totals rotate while viewing. Subtitle, composer and lyricist appear in the small icon tooltip. The filename is used only when no title is available."
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
                     opacity: 0.7

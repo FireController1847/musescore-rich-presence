@@ -137,7 +137,7 @@ When no score is open, your activity is hidden by default. You can choose to sho
 
 Right-click the Discord icon to choose which score details appear, how often they rotate, and whether to show elapsed time or playback progress. Changes are saved automatically.
 
-The plugin prefers the title and credits printed on your score. Hover over the small activity icon in Discord to see the subtitle, lyricist and composer. Filename fallback is enabled by default and only used when a title is unavailable. Missing information is skipped. During playback, musical details refer to a representative instrument in the score.
+The plugin prefers the title and credits printed on your score. Hover over the small activity icon in Discord to see the subtitle, composer and lyricist. Filename fallback is enabled by default and only used when a title is unavailable. Missing information is skipped. During playback, musical details refer to a representative instrument in the score.
 
 ## Troubleshooting
 
