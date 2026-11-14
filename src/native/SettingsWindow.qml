@@ -60,7 +60,7 @@ ApplicationWindow {
             ColumnLayout {
                 spacing: 2
                 PreferenceCheck { text: "Score title in headline"; preferenceKey: "title" }
-                PreferenceCheck { text: "Score filename (.mscz)"; preferenceKey: "filename" }
+                PreferenceCheck { text: "Use filename when title is unavailable"; preferenceKey: "filename" }
                 PreferenceCheck { text: "Subtitle"; preferenceKey: "subtitle" }
                 PreferenceCheck { text: "Lyricist"; preferenceKey: "lyricist" }
                 PreferenceCheck { text: "Composer / author"; preferenceKey: "composer" }
@@ -69,7 +69,7 @@ ApplicationWindow {
                 PreferenceCheck { text: "Staff count"; preferenceKey: "staves" }
                 PreferenceCheck { text: "Page count"; preferenceKey: "pages" }
                 Label {
-                    text: "Score details rotate while viewing. Title is preferred in the headline; filename sharing is opt-in, including as a fallback."
+                    text: "Score totals rotate while viewing. Subtitle, lyricist and composer appear in the small icon tooltip. The filename is used only when no title is available."
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
                     opacity: 0.7

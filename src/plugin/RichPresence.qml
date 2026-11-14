@@ -146,9 +146,10 @@ MuseScore {
         return String(value || "").replace(/\r\n|[\r\n\u0085\u2028\u2029]/g, " ")
     }
 
-    function bounded(value) {
-        // Discord limits details and state to 128 characters.
-        var result = singleLine(value)
+    function bounded(value, multiline) {
+        // Discord activity text is limited to 128 characters. Only the
+        // small-image tooltip intentionally contains line separators.
+        var result = multiline ? String(value || "") : singleLine(value)
         if (result.length > 128) {
             result = result.substring(0, 128)
             var last = result.charCodeAt(result.length - 1)
@@ -190,7 +191,7 @@ MuseScore {
         if (visibleText)
             return visibleText
 
-        var fallback = singleLine(metadata)
+        var fallback = singleLine(discord.plainScoreText(String(metadata || "")))
         return fallback.trim() && placeholders.indexOf(fallback.trim().toLowerCase()) === -1 ? fallback : ""
     }
 
@@ -554,22 +555,14 @@ MuseScore {
         if (!/\.mscz$/i.test(filename))
             filename = filename.replace(/\.mscx$/i, "") + ".mscz"
 
-        // Filename sharing is opt-in, even for the primary details line.
-        var displayName = prefs.title && title ? title : (prefs.filename ? filename : "")
+        // Filename is strictly a fallback for scores without a title.
+        var displayName = title ? (prefs.title ? title : "") : (prefs.filename ? filename : "")
         var details = playing ? (displayName || "Untitled score")
                               : (displayName ? mode + " " + displayName + "..." : mode + " a score...")
 
         var listening = playing && prefs.playProgress
         var states = []
         if (mode === "Viewing") {
-            if (prefs.filename)
-                pushRotation(states, [filename])
-            if (prefs.subtitle)
-                pushRotation(states, [subtitle])
-            if (prefs.lyricist)
-                pushRotation(states, [lyricist])
-            if (prefs.composer)
-                pushRotation(states, [composer])
             var systems = prefs.systems ? systemCount(score) : 0
             if (prefs.measures && score.nmeasures > 0)
                 pushRotation(states, [score.nmeasures + (score.nmeasures === 1 ? " Measure" : " Measures")])
@@ -604,10 +597,25 @@ MuseScore {
             details: bounded(details),
             assets: {
                 large_image: "musescore4",
-                large_text: "MuseScore 4"
+                large_text: "MuseScore 4",
+                small_image: playing ? "play" : (mode === "Editing" ? "pause" : "view")
             },
             instance: false
         }
+        // Flatten each credit independently, then insert only the intentional
+        // line separators between the enabled and available fields.
+        var credits = [prefs.subtitle ? subtitle : "",
+                       prefs.lyricist ? lyricist : "",
+                       prefs.composer ? composer : ""]
+        var hoverLines = []
+        for (var i = 0; i < credits.length; i++) {
+            var line = singleLine(credits[i])
+            if (line.trim())
+                hoverLines.push(line)
+        }
+        if (hoverLines.length)
+            activity.assets.small_text = bounded(hoverLines.join("\n"), true)
+
         if (states.length) {
             stateIndex %= states.length
             if (playing) {

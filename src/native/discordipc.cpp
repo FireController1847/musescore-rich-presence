@@ -44,7 +44,7 @@ DiscordIPC::DiscordIPC(QObject *parent) : QObject(parent)
         m_settings.setValue(QStringLiteral("currentStaff"), m_settings.value(QStringLiteral("currentTrack")));
 
     const QVariantMap defaults {
-        {QStringLiteral("filename"), false},
+        {QStringLiteral("filename"), true},
         {QStringLiteral("title"), true},
         {QStringLiteral("subtitle"), true},
         {QStringLiteral("lyricist"), true},

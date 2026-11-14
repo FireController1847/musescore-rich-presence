@@ -30,18 +30,14 @@ When playback is enabled, active transport takes precedence over selection. Othe
 
 | Viewing | Editing | Playing / Listening |
 | --- | --- | --- |
-| Filename | Measure · Staff | System · Page |
-| Subtitle | Dynamics · BPM | Dynamics · BPM |
-| Lyricist | Key · Time signature | Key · Time signature |
-| Composer | Instrument | Instrument |
-| Measures | | |
-| Systems | | |
-| Staves | | |
-| Pages | | |
+| Measures | Measure · Staff | System · Page |
+| Systems | Dynamics · BPM | Dynamics · BPM |
+| Staves | Key · Time signature | Key · Time signature |
+| Pages | Instrument | Instrument |
 
-- Viewing and Editing headlines use `Viewing <title>...` and `Editing <title>...`; playback uses the title alone. The title is not repeated in rotations. Filename sharing is opt-in, including headline fallback. Display metadata without prefixes. Skip disabled or unavailable fields; join paired values with ` · `. Default rotation: 5 seconds, configurable 5–60 seconds.
+- Viewing and Editing headlines use `Viewing <title>...` and `Editing <title>...`; playback uses the title alone. The title is not repeated in rotations. Filename is enabled by default and used only as the headline fallback when the title is unavailable; disabling title sharing does not expose a filename for a titled score. Metadata never rotates. Skip disabled or unavailable fields; join paired values with ` · `. Default rotation: 5 seconds, configurable 5–60 seconds.
 - Listening uses Discord type 2, with the title in `name` and `details`, author credit in `state`, and rotating playback statistics in `assets.large_text` (Discord renders this as the third text line). Do not restore the static MuseScore 4 caption in Listening. Playing without a progress bar uses type 0 and the normal rotating state.
-- Use the `musescore4` large asset. No small image assets are currently used. Preserve existing sharing preferences, elapsed session timestamps, and playback start/end timestamps synchronized with the transport. Reset the elapsed timer when changing scores.
+- Use the `musescore4` large asset and small assets `view` for Viewing, `pause` for Editing, and `play` for Playing/Listening. Small-image hover text joins enabled, nonempty subtitle, lyricist and composer values in that order with newlines, without labels. Flatten internal line breaks before joining, preserve the intentional separators, and apply the Discord text limit. Browsing has no score tooltip. Preserve existing sharing preferences, elapsed session timestamps, and playback start/end timestamps synchronized with the transport. Reset the elapsed timer when changing scores.
 - Prefer visible heading text in leading vertical frames (MuseScore 4.6+) over non-placeholder metadata. Decode rich text and flatten CRLF, CR, LF, Unicode line separators and encoded newlines to spaces; preserve consecutive logical line breaks as consecutive spaces. Bound Discord text to 128 characters without splitting a surrogate pair.
 - Playback uses MuseScore 4.7's internal transport model. It is score-wide, so select the first chord track at or before the current position within the measure, falling back to a rest track for staff-specific information. Editing uses the selection. Display staff numbers as one-based staff indices, and count actual staves rather than voice slots. Internal MuseScore track indices remain necessary for voice-specific queries.
 - Count musical systems across the score, excluding frame-only systems. Use the local key and time signature; if no mode is specified, use the requested display heuristic (flats → minor, sharps or no accidentals → major). Explicit key modes take precedence; this heuristic does not establish the actual tonality. Dynamics use full names for the latest explicit sustained marking, not interpolated volume, hairpins or transient accents.

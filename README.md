@@ -126,7 +126,7 @@ Your Discord presence changes automatically depending on what you're doing:
 
 | Activity | What Discord displays |
 | :--- | :--- |
-| Viewing | Score information and totals when nothing is selected. |
+| Viewing | Score totals when nothing is selected. |
 | Editing | Musical details at your selection. |
 | Listening | Score title, author, live musical details, and a playback progress bar. |
 | Playing | Live musical details without a progress bar, when the bar is disabled. |
@@ -137,7 +137,7 @@ When no score is open, your activity is hidden by default. You can choose to sho
 
 Right-click the Discord icon to choose which score details appear, how often they rotate, and whether to show elapsed time or playback progress. Changes are saved automatically.
 
-The plugin prefers the title and credits printed on your score. Filename sharing is off by default, and unavailable information is skipped. During playback, musical details refer to a representative instrument in the score.
+The plugin prefers the title and credits printed on your score. Hover over the small activity icon in Discord to see the subtitle, lyricist and composer. Filename fallback is enabled by default and only used when a title is unavailable. Missing information is skipped. During playback, musical details refer to a representative instrument in the score.
 
 ## Troubleshooting
 
