@@ -37,13 +37,19 @@ QByteArray encode(const QJsonObject &object)
 
 DiscordIPC::DiscordIPC(QObject *parent) : QObject(parent)
 {
+    // Preserve existing preferences when replacing voice-track display with staves.
+    if (!m_settings.contains(QStringLiteral("staves")) && m_settings.contains(QStringLiteral("tracks")))
+        m_settings.setValue(QStringLiteral("staves"), m_settings.value(QStringLiteral("tracks")));
+    if (!m_settings.contains(QStringLiteral("currentStaff")) && m_settings.contains(QStringLiteral("currentTrack")))
+        m_settings.setValue(QStringLiteral("currentStaff"), m_settings.value(QStringLiteral("currentTrack")));
+
     const QVariantMap defaults {
         {QStringLiteral("filename"), false},
         {QStringLiteral("title"), true},
         {QStringLiteral("subtitle"), true},
         {QStringLiteral("lyricist"), true},
         {QStringLiteral("systems"), true},
-        {QStringLiteral("currentTrack"), true},
+        {QStringLiteral("currentStaff"), true},
         {QStringLiteral("currentPage"), true},
         {QStringLiteral("currentKey"), true},
         {QStringLiteral("currentTime"), true},
@@ -51,7 +57,7 @@ DiscordIPC::DiscordIPC(QObject *parent) : QObject(parent)
         {QStringLiteral("composer"), true},
         {QStringLiteral("measures"), true},
         {QStringLiteral("pages"), true},
-        {QStringLiteral("tracks"), true},
+        {QStringLiteral("staves"), true},
         {QStringLiteral("elapsed"), true},
         {QStringLiteral("playback"), true},
         {QStringLiteral("playMeasure"), true},

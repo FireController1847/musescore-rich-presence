@@ -41,7 +41,7 @@ Whether you're composing, arranging, or transcribing, your Discord profile can r
     </td>
     <td width="50%" valign="top">
       <h3>🎵 Musical Details</h3>
-      Showcase the score's title, subtitle, composer, measure count, page count, and track count.
+      Showcase the score's title, subtitle, composer, measure count, page count, and staff count.
     </td>
   </tr>
   <tr>
@@ -127,7 +127,7 @@ Your Discord presence changes automatically depending on what you're doing:
 | Activity | What Discord displays |
 | :--- | :--- |
 | Viewing | Score information and totals when nothing is selected. |
-| Editing | Score information and musical details at your selection. |
+| Editing | Musical details at your selection. |
 | Listening | Score title, author, live musical details, and a playback progress bar. |
 | Playing | Live musical details without a progress bar, when the bar is disabled. |
 

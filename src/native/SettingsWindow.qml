@@ -66,10 +66,10 @@ ApplicationWindow {
                 PreferenceCheck { text: "Composer / author"; preferenceKey: "composer" }
                 PreferenceCheck { text: "Measure count"; preferenceKey: "measures" }
                 PreferenceCheck { text: "System count"; preferenceKey: "systems" }
-                PreferenceCheck { text: "Track count"; preferenceKey: "tracks" }
+                PreferenceCheck { text: "Staff count"; preferenceKey: "staves" }
                 PreferenceCheck { text: "Page count"; preferenceKey: "pages" }
                 Label {
-                    text: "Title is preferred. Filename is shared only when enabled, including as a fallback for untitled scores."
+                    text: "Score details rotate while viewing. Title is preferred in the headline; filename sharing is opt-in, including as a fallback."
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
                     opacity: 0.7
@@ -80,7 +80,7 @@ ApplicationWindow {
             ColumnLayout {
                 spacing: 4
                 PreferenceCheck { text: "Current measure (editing)"; preferenceKey: "playMeasure" }
-                PreferenceCheck { text: "Current track (editing)"; preferenceKey: "currentTrack" }
+                PreferenceCheck { text: "Current staff (editing)"; preferenceKey: "currentStaff" }
                 PreferenceCheck { text: "Current system (playback)"; preferenceKey: "playSystem" }
                 PreferenceCheck { text: "Current page (playback)"; preferenceKey: "currentPage" }
                 PreferenceCheck { text: "Dynamics while editing"; preferenceKey: "editDynamics" }

@@ -352,12 +352,13 @@ MuseScore {
                 tonic += key < 0 ? "♭" : "♯"
             return tonic + " " + modes[mode][1]
         }
-        // A signature alone cannot distinguish a major key from its relative minor.
-        return major[key + 7] + " Major / " + minor[key + 7] + " Minor"
+        // Display heuristic only when no explicit mode is available:
+        // flats imply minor, sharps (and no accidentals) imply major.
+        return key < 0 ? minor[key + 7] + " Minor" : major[key + 7] + " Major"
     }
 
     function positionInfo(score, measure, segment, track, playback, playing) {
-        var info = { measure: 0, system: 0, track: 0, page: 0,
+        var info = { measure: 0, system: 0, staff: 0, page: 0,
                      dynamics: "", bpm: 0, key: "", time: "", instrument: "" }
         if (!measure)
             return info
@@ -367,8 +368,9 @@ MuseScore {
         info.page = layout.page
         var staff = null
         if (track >= 0 && track < score.ntracks) {
-            info.track = track + 1
             staff = score.staves[Math.floor(track / 4)]
+            if (staff)
+                info.staff = staff.idx + 1
         }
         try {
             var signature = staff && segment ? staff.timeSig(segment.fraction) : null
@@ -559,7 +561,7 @@ MuseScore {
 
         var listening = playing && prefs.playProgress
         var states = []
-        if (!playing) {
+        if (mode === "Viewing") {
             if (prefs.filename)
                 pushRotation(states, [filename])
             if (prefs.subtitle)
@@ -568,13 +570,15 @@ MuseScore {
                 pushRotation(states, [lyricist])
             if (prefs.composer)
                 pushRotation(states, [composer])
-        }
-        if (mode === "Viewing") {
             var systems = prefs.systems ? systemCount(score) : 0
-            pushRotation(states, [prefs.measures && score.nmeasures > 0 ? score.nmeasures + " Measures" : "",
-                                  systems > 0 ? systems + " Systems" : ""])
-            pushRotation(states, [prefs.tracks && score.ntracks > 0 ? score.ntracks + " Tracks" : "",
-                                  prefs.pages && score.npages > 0 ? score.npages + " Pages" : ""])
+            if (prefs.measures && score.nmeasures > 0)
+                pushRotation(states, [score.nmeasures + (score.nmeasures === 1 ? " Measure" : " Measures")])
+            if (systems > 0)
+                pushRotation(states, [systems + (systems === 1 ? " System" : " Systems")])
+            if (prefs.staves && score.nstaves > 0)
+                pushRotation(states, [score.nstaves + (score.nstaves === 1 ? " Staff" : " Staves")])
+            if (prefs.pages && score.npages > 0)
+                pushRotation(states, [score.npages + (score.npages === 1 ? " Page" : " Pages")])
         } else {
             var position = playing ? null : selectedPosition(score)
             var measure = playing ? measureAt(score, playback.measure) : (position ? position.measure : null)
@@ -586,7 +590,7 @@ MuseScore {
                                       prefs.currentPage && info.page > 0 ? "Page " + info.page : ""])
             } else {
                 pushRotation(states, [prefs.playMeasure && info.measure > 0 ? "Measure " + info.measure : "",
-                                      prefs.currentTrack && info.track > 0 ? "Track " + info.track : ""])
+                                      prefs.currentStaff && info.staff > 0 ? "Staff " + info.staff : ""])
             }
             pushRotation(states, [(playing ? prefs.playDynamics : prefs.editDynamics) ? info.dynamics : "",
                                   prefs.playTempo && info.bpm > 0 ? info.bpm + " BPM" : ""])
