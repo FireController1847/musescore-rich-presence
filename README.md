@@ -124,7 +124,7 @@ The native library has a platform-specific extension. The development preset aut
 
 If MuseScore preferences specify a different plugins directory, set `MUSESCORE_PLUGINS_DIR` in your local CMake cache or user preset. For a packaging-only build, configure with `-DMUSESCORE_AUTO_DEPLOY=OFF` and use the staged directory in `dist/`.
 
-Quit MuseScore before replacing the native library. Open Discord Desktop, restart MuseScore, enable the plugin in the Plugins Manager, and invoke **Discord Rich Presence** from the Plugins menu. A Discord icon appears in MuseScore's notation status bar after activation. Blurple indicates accepted activity, amber indicates waiting or connecting, and a dimmed icon indicates disabled. Hover for the current status and click to toggle Rich Presence. The top-level Plugins menu action also toggles it. A status dialog remains available if the native module fails to load or the notation bar cannot be found. The integration uses MuseScore's internal notation status-bar layout and may require adjustment for future versions.
+Quit MuseScore before replacing the native library. Open Discord Desktop, restart MuseScore, enable the plugin in the Plugins Manager, and invoke **Discord Rich Presence** from the Plugins menu. A Discord icon appears in MuseScore's notation status bar after activation. The monochrome outline follows the application theme: a full-opacity icon indicates accepted activity, a dimmed outline indicates waiting or connecting, and a diagonal slash indicates disabled. Hover for the current status and click to toggle Rich Presence. The top-level Plugins menu action also toggles it. A status dialog remains available if the native module fails to load or the notation bar cannot be found. The integration uses MuseScore's internal notation status-bar layout and may require adjustment for future versions.
 
 MuseScore requires the plugin to be invoked once per application session. After activation, it automatically publishes when a score is opened or selected, clears activity when no score is open, and resets the elapsed timer for a different score. MuseScore's plugin manager does not provide an automatic startup hook for legacy QML plugins.
 
@@ -141,6 +141,6 @@ All contributions are held to the same standards of correctness, maintainability
 
 ## License and Independence
 
-All rights reserved. See [LICENSE](LICENSE). The Discord SVG is from [Simple Icons](https://github.com/simple-icons/simple-icons/blob/develop/icons/discord.svg) (CC0); Discord trademarks remain the property of their respective owner.
+All rights reserved. See [LICENSE](LICENSE). The Discord outline SVGs are adapted from [Simple Icons](https://github.com/simple-icons/simple-icons/blob/develop/icons/discord.svg) (CC0); Discord trademarks remain the property of their respective owner.
 
 MuseScore Rich Presence is an independent project and is not affiliated with, endorsed by, or sponsored by MuseScore or Discord.

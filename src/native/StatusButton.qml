@@ -12,14 +12,13 @@ ToolButton {
 
     readonly property bool active: presenceClient.enabled && presenceClient.ready
                                    && presenceClient.status === "Discord accepted activity"
-    readonly property color statusColor: active ? "#5865F2"
-                                        : presenceClient.enabled ? "#b88b35" : palette.buttonText
 
-    icon.source: "qrc:/discordpresence/discord.svg"
+    icon.source: presenceClient.enabled ? "qrc:/discordpresence/discord.svg"
+                                       : "qrc:/discordpresence/discord-off.svg"
     icon.width: 18
     icon.height: 18
-    icon.color: statusColor
-    opacity: presenceClient.enabled ? 1.0 : 0.55
+    icon.color: palette.buttonText
+    opacity: presenceClient.enabled && !active ? 0.55 : 1.0
     hoverEnabled: true
     focusPolicy: Qt.StrongFocus
 
