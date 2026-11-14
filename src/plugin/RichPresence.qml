@@ -10,12 +10,15 @@ MuseScore {
     description: qsTr("Display your current score on Discord.")
     version: "2.0"
     categoryCode: "composing"
+    thumbnailName: "current_score_info.png"
     requiresScore: false
 
     property bool enabledPresence: false
     property string lastScore: ""
     property double startedAt: 0
     property int stateIndex: 0
+    property bool hasScore: false
+    property double nextRotation: 0
 
     property var bridge: null
     property var discord: bridge ? bridge.client : null
@@ -69,7 +72,7 @@ MuseScore {
 
     Timer {
         id: refresh
-        interval: 5000
+        interval: 1000
         repeat: true
         onTriggered: {
             try {
@@ -93,12 +96,8 @@ MuseScore {
                 stateIndex = 0
                 startedAt = Math.floor(Date.now() / 1000)
                 discord.start("577645453429047314")
-                // Publish a fallback before accessing score-specific properties.
-                discord.setActivity({
-                    details: "MuseScore",
-                    state: "Composing",
-                    timestamps: { start: startedAt }
-                })
+                hasScore = false
+                nextRotation = 0
                 refresh.start()
                 updateActivity()
             }
@@ -126,40 +125,50 @@ MuseScore {
             return
 
         var score = curScore
-        var name = score ? String(score.scoreName || "Untitled") : ""
-        if (name !== lastScore) {
+        if (!score) {
+            if (hasScore) {
+                hasScore = false
+                lastScore = ""
+                stateIndex = 0
+                nextRotation = 0
+            }
+            discord.clearActivity()
+            return
+        }
+
+        var now = Date.now()
+        var name = String(score.scoreName || "Untitled")
+        if (!hasScore || name !== lastScore) {
+            hasScore = true
             lastScore = name
-            startedAt = Math.floor(Date.now() / 1000)
+            startedAt = Math.floor(now / 1000)
             stateIndex = 0
+            nextRotation = now + 5000
+        } else if (now >= nextRotation) {
+            stateIndex++
+            nextRotation = now + 5000
         }
 
-        var details = "MuseScore"
-        var state = "Composing"
-        var smallText = "Composing"
+        var states = []
+        var title = score.title || score.metaTag("workTitle")
+        var subtitle = score.metaTag("subtitle")
+        var composer = score.composer || score.metaTag("composer")
 
-        if (score) {
-            details = "Editing " + name
-            var states = []
-            var title = score.title || score.metaTag("workTitle")
-            var subtitle = score.metaTag("subtitle")
-            var composer = score.composer || score.metaTag("composer")
+        if (title)
+            states.push("Title: " + title)
+        if (subtitle)
+            states.push("Subtitle: " + subtitle)
+        if (composer)
+            states.push("Composer: " + composer)
 
-            if (title)
-                states.push("Title: " + title)
-            if (subtitle)
-                states.push("Subtitle: " + subtitle)
-            if (composer)
-                states.push("Composer: " + composer)
+        states.push("Contains " + score.nmeasures + " Measures")
+        states.push("Contains " + score.npages + " Pages")
+        states.push("Contains " + score.ntracks + " Tracks")
+        stateIndex %= states.length
 
-            states.push("Contains " + score.nmeasures + " Measures")
-            states.push("Contains " + score.npages + " Pages")
-            states.push("Contains " + score.ntracks + " Tracks")
-            smallText = "Contains " + score.nmeasures + " Measures"
-
-            stateIndex %= states.length
-            state = states[stateIndex]
-            stateIndex = (stateIndex + 1) % states.length
-        }
+        var details = "Editing " + name
+        var state = states[stateIndex]
+        var smallText = "Contains " + score.nmeasures + " Measures"
 
         discord.setActivity({
             details: bounded(details),

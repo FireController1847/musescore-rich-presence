@@ -23,7 +23,7 @@
 </p>
 
 > [!IMPORTANT]
-> The native implementation is experimental and targets MuseScore 4. It has not yet been validated in a running MuseScore installation. The original Node.js implementation remains available on the [master branch](https://github.com/FireController1847/musescore-rich-presence/tree/master).
+> The native implementation is experimental and targets MuseScore 4. Discord activity has been verified on macOS by the project maintainer; other platforms remain unverified. The original Node.js implementation remains available on the [master branch](https://github.com/FireController1847/musescore-rich-presence/tree/master).
 
 ## About
 
@@ -114,6 +114,7 @@ The staged plugin directory contains:
 ```text
 dist/MuseScoreRichPresence/
 ├── RichPresence.qml
+├── current_score_info.png
 └── DiscordIPC/
     ├── qmldir
     └── libDiscordIPC.dylib
@@ -124,6 +125,8 @@ The native library has a platform-specific extension. Copy the entire `MuseScore
 Alternatively, use the VS Code task **Install plugin (MuseScore user directory)** to build and install directly into the default user plugin directory. Change the destination if your MuseScore preferences use a different path.
 
 Quit MuseScore before replacing the native library. Open Discord Desktop, restart MuseScore, enable the plugin in the Plugins Manager, and invoke **Discord Rich Presence** from the Plugins menu. The status window displays native module loading errors, connection progress, or confirmation that Discord accepted the activity. Closing the status window does not disable Rich Presence. Invoke the plugin again to disable it.
+
+MuseScore requires the plugin to be invoked once per application session. After activation, it automatically publishes when a score is opened or selected, clears activity when no score is open, and resets the elapsed timer for a different score. MuseScore's plugin manager does not provide an automatic startup hook for legacy QML plugins.
 
 If no activity appears, inspect the status window and MuseScore's application logs for `MuseScore Rich Presence` messages. Listing the plugin in the manager alone does not establish that its native module loaded. Check that Discord activity sharing is enabled and that the Qt SDK version and architecture match MuseScore.
 

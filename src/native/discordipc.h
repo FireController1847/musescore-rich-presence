@@ -27,6 +27,7 @@ public:
     Q_INVOKABLE void start(const QString &clientId);
     Q_INVOKABLE void stop();
     Q_INVOKABLE void setActivity(const QVariantMap &activity);
+    Q_INVOKABLE void clearActivity();
 
 signals:
     void readyChanged();

@@ -87,7 +87,7 @@ install(TARGETS DiscordIPC
 )
 install(FILES src/plugin/DiscordIPC/qmldir
     DESTINATION MuseScoreRichPresence/DiscordIPC)
-install(FILES src/plugin/RichPresence.qml
+install(FILES src/plugin/RichPresence.qml src/plugin/current_score_info.png
     DESTINATION MuseScoreRichPresence)
 
 # A normal build produces the complete staged plugin automatically.

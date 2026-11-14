@@ -204,6 +204,19 @@ void DiscordIPC::setActivity(const QVariantMap &activity)
         sendActivity(m_activity);
 }
 
+void DiscordIPC::clearActivity()
+{
+    if (!m_hasActivity)
+        return;
+
+    m_hasActivity = false;
+    m_activity = QJsonObject();
+    if (m_ready) {
+        sendActivity(QJsonValue(QJsonValue::Null));
+        setStatus(QStringLiteral("Waiting for an open score"));
+    }
+}
+
 void DiscordIPC::sendActivity(const QJsonValue &activity)
 {
     const QJsonObject args {
@@ -267,16 +280,20 @@ void DiscordIPC::receive()
                 // Retry this same candidate first if Discord restarts.
                 m_nextPath = (m_nextPath + m_paths.size() - 1) % m_paths.size();
                 setReady(true);
-                setStatus(QStringLiteral("Discord handshake accepted; publishing activity"));
-                if (m_hasActivity)
+                if (m_hasActivity) {
+                    setStatus(QStringLiteral("Discord handshake accepted; publishing activity"));
                     sendActivity(m_activity);
+                } else {
+                    setStatus(QStringLiteral("Waiting for an open score"));
+                }
             } else if (event == QStringLiteral("ERROR")) {
                 setStatus(QStringLiteral("Discord RPC error: %1").arg(
                     message.value(QStringLiteral("data")).toObject()
                            .value(QStringLiteral("message")).toString()));
             } else if (message.value(QStringLiteral("cmd")).toString() == QStringLiteral("SET_ACTIVITY")
                        && m_enabled && m_ready) {
-                setStatus(QStringLiteral("Discord accepted activity"));
+                setStatus(m_hasActivity ? QStringLiteral("Discord accepted activity")
+                                        : QStringLiteral("Waiting for an open score"));
             }
         }
     }
