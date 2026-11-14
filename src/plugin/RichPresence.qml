@@ -254,11 +254,26 @@ MuseScore {
     }
 
     function dynamicName(value) {
-        var levels = ["PPPPPP", "PPPPP", "PPPP", "PPP", "PP", "P", "MP",
-                      "MF", "F", "FF", "FFF", "FFFF", "FFFFF", "FFFFFF", "N"]
-        for (var i = 0; i < levels.length; i++) {
-            if (Number(value) === Number(DynamicType[levels[i]]))
-                return levels[i].toLowerCase()
+        var levels = {
+            PPPPPP: "Pianissississississimo",
+            PPPPP: "Pianississississimo",
+            PPPP: "Pianissississimo",
+            PPP: "Pianississimo",
+            PP: "Pianissimo",
+            P: "Piano",
+            MP: "Mezzo Piano",
+            MF: "Mezzo Forte",
+            F: "Forte",
+            FF: "Fortissimo",
+            FFF: "Fortississimo",
+            FFFF: "Fortissississimo",
+            FFFFF: "Fortississississimo",
+            FFFFFF: "Fortissississississimo",
+            N: "Niente"
+        }
+        for (var marking in levels) {
+            if (Number(value) === Number(DynamicType[marking]))
+                return levels[marking]
         }
         return ""
     }
@@ -405,7 +420,7 @@ MuseScore {
             if (prefs.editDynamics) {
                 var editLevel = dynamicsAt(score, currentMeasure, playback, false)
                 if (editLevel)
-                    states.push("Dynamics: " + editLevel)
+                    states.push(editLevel)
             }
 
         } else {
@@ -424,7 +439,7 @@ MuseScore {
             if (prefs.playDynamics) {
                 var playLevel = dynamicsAt(score, currentMeasure, playback, true)
                 if (playLevel)
-                    states.push("Dynamics: " + playLevel)
+                    states.push(playLevel)
             }
         }
 
