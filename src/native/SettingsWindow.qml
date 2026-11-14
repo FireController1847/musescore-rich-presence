@@ -59,7 +59,7 @@ ApplicationWindow {
 
             ColumnLayout {
                 spacing: 2
-                PreferenceCheck { text: "Score title"; preferenceKey: "title" }
+                PreferenceCheck { text: "Score title in headline"; preferenceKey: "title" }
                 PreferenceCheck { text: "Score filename (.mscz)"; preferenceKey: "filename" }
                 PreferenceCheck { text: "Subtitle"; preferenceKey: "subtitle" }
                 PreferenceCheck { text: "Lyricist"; preferenceKey: "lyricist" }

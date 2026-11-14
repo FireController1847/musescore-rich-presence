@@ -31,16 +31,15 @@ When playback is enabled, active transport takes precedence over selection. Othe
 | Viewing | Editing | Playing / Listening |
 | --- | --- | --- |
 | Filename | Filename | System · Page |
-| Title | Title | Dynamics · BPM |
-| Subtitle | Subtitle | Key · Time signature |
-| Lyricist | Lyricist | Instrument |
-| Composer | Composer | |
+| Subtitle | Subtitle | Dynamics · BPM |
+| Lyricist | Lyricist | Key · Time signature |
+| Composer | Composer | Instrument |
 | Measures · Systems | Measure · Track | |
 | Tracks · Pages | Dynamics · BPM | |
 | | Key · Time signature | |
 | | Instrument | |
 
-- Viewing and Editing headlines use `Viewing <title>...` and `Editing <title>...`; playback uses the title alone. Filename sharing is opt-in, including headline fallback. Display metadata without prefixes. Skip disabled or unavailable fields; join paired values with ` · `. Default rotation: 5 seconds, configurable 5–60 seconds.
+- Viewing and Editing headlines use `Viewing <title>...` and `Editing <title>...`; playback uses the title alone. The title is not repeated in rotations. Filename sharing is opt-in, including headline fallback. Display metadata without prefixes. Skip disabled or unavailable fields; join paired values with ` · `. Default rotation: 5 seconds, configurable 5–60 seconds.
 - Listening uses Discord type 2, with the title in `name` and `details`, author credit in `state`, and rotating playback statistics in `assets.large_text` (Discord renders this as the third text line). Do not restore the static MuseScore 4 caption in Listening. Playing without a progress bar uses type 0 and the normal rotating state.
 - Use the `musescore4` large asset. No small image assets are currently used. Preserve existing sharing preferences, elapsed session timestamps, and playback start/end timestamps synchronized with the transport. Reset the elapsed timer when changing scores.
 - Prefer visible heading text in leading vertical frames (MuseScore 4.6+) over non-placeholder metadata. Decode rich text and flatten CRLF, CR, LF, Unicode line separators and encoded newlines to spaces; preserve consecutive logical line breaks as consecutive spaces. Bound Discord text to 128 characters without splitting a surrogate pair.

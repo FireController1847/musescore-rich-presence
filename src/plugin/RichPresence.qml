@@ -562,8 +562,6 @@ MuseScore {
         if (!playing) {
             if (prefs.filename)
                 pushRotation(states, [filename])
-            if (prefs.title)
-                pushRotation(states, [title])
             if (prefs.subtitle)
                 pushRotation(states, [subtitle])
             if (prefs.lyricist)
