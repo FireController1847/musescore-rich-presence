@@ -189,13 +189,113 @@ MuseScore {
         return placeholders.indexOf(fallback.toLowerCase()) === -1 ? fallback : ""
     }
 
-    function formatPlaybackTime(ms) {
-        var seconds = Math.max(0, Math.floor(ms / 1000))
-        var hours = Math.floor(seconds / 3600)
-        var minutes = Math.floor(seconds / 60) % 60
-        var remainder = seconds % 60
-        return (hours ? hours + ":" + (minutes < 10 ? "0" : "") : "")
-                + minutes + ":" + (remainder < 10 ? "0" : "") + remainder
+    function measureAt(score, number) {
+        if (number < 1)
+            return null
+        var measure = score.firstMeasure
+        for (var i = 1; measure && i < number; i++)
+            measure = measure.nextMeasure
+        return measure
+    }
+
+    function systemAt(score, measure) {
+        if (!measure)
+            return 0
+        try {
+            var tick = measure.tick.ticks
+            var systems = score.systems
+            var number = 0
+            for (var i = 0; i < systems.length; i++) {
+                var first = systems[i].firstMeasure
+                var last = systems[i].lastMeasure
+                if (!first || !last)
+                    continue
+                number++
+                if (tick >= first.tick.ticks && tick < last.tick.ticks + last.ticks.ticks)
+                    return number
+            }
+        } catch (error) {
+            // Keep the measure number when the layout is unavailable.
+        }
+        return 0
+    }
+
+    function playbackSegment(measure, playback) {
+        if (!measure)
+            return null
+        var segment = measure.firstSegment
+        if (!segment)
+            return null
+        // Beat position is internal only; it locates the dynamic marking.
+        var denominator = measure.timesigNominal.denominator
+        var tick = measure.tick.ticks + Math.max(0, playback.beat - 1)
+                   * division * 4 / Math.max(1, denominator)
+        while (segment.nextInMeasure && segment.nextInMeasure.tick <= tick)
+            segment = segment.nextInMeasure
+        return segment
+    }
+
+    function selectedPosition(score) {
+        var selection = score.selection
+        if (!selection)
+            return null
+        if (selection.isRange && selection.startSegment)
+            return { segment: selection.startSegment, staff: selection.startStaff }
+        var elements = selection.elements
+        if (!elements || !elements.length)
+            return null
+        var item = elements[0]
+        var staff = item.staffIdx
+        for (var i = 0; item && i < 16; i++, item = item.parent) {
+            if (item.type === Element.SEGMENT)
+                return { segment: item, staff: staff }
+        }
+        return null
+    }
+
+    function dynamicName(value) {
+        var levels = ["PPPPPP", "PPPPP", "PPPP", "PPP", "PP", "P", "MP",
+                      "MF", "F", "FF", "FFF", "FFFF", "FFFFF", "FFFFFF", "N"]
+        for (var i = 0; i < levels.length; i++) {
+            if (Number(value) === Number(DynamicType[levels[i]]))
+                return levels[i].toLowerCase()
+        }
+        return ""
+    }
+
+    function dynamicsAt(score, measure, playback, playing) {
+        try {
+            var position = playing ? null : selectedPosition(score)
+            var staff = position ? position.staff : -1
+            var segment = position ? position.segment : playbackSegment(measure, playback)
+            if (!segment && !playing && !playback.known)
+                return ""
+            if (!segment)
+                return ""
+            // Use the most recent explicit sustained level. With no staff
+            // selection, choose the topmost marked staff at that position.
+            while (segment) {
+                var annotations = segment.annotations
+                var level = ""
+                var topStaff = Infinity
+                for (var i = 0; i < annotations.length; i++) {
+                    var item = annotations[i]
+                    if (item.type !== Element.DYNAMIC || (staff >= 0 && item.staffIdx !== staff))
+                        continue
+                    var name = dynamicName(item.dynamicType)
+                    if (name && item.staffIdx < topStaff) {
+                        level = name
+                        topStaff = item.staffIdx
+                    }
+                }
+                if (level)
+                    return level
+                segment = segment.prev
+            }
+        } catch (error) {
+            // Dynamics are optional when the score API cannot resolve them.
+        }
+        return ""
     }
 
     function updateActivity() {
@@ -257,8 +357,8 @@ MuseScore {
             nextRotation = now + prefs.rotation * 1000
         }
 
-        var playback = prefs.playback ? discord.playbackSnapshot() : ({ known: false })
-        var playing = playback.known && playback.playing
+        var playback = (prefs.playback || prefs.editDynamics) ? discord.playbackSnapshot() : ({ known: false })
+        var playing = prefs.playback && playback.known && playback.playing
         var mode = playing ? "Playing" : "Editing"
         if (mode !== activityMode) {
             activityMode = mode
@@ -274,15 +374,20 @@ MuseScore {
         var subtitle = scoreHeading(score, Tid.SUBTITLE, score.metaTag("subtitle"), ["subtitle"])
         var composer = scoreHeading(score, Tid.COMPOSER, score.composer || score.metaTag("composer"),
                                     ["composer / arranger", "composer", "arranger"])
+        var author = String(score.metaTag("arranger") || score.lyricist || score.metaTag("lyricist") || score.metaTag("author") || "").trim()
+        if (["arranger", "lyricist", "author", "composer / arranger"].indexOf(author.toLowerCase()) !== -1)
+            author = ""
         var filename = name.replace(/\\/g, "/").split("/").pop()
         if (!/\.mscz$/i.test(filename))
             filename = filename.replace(/\.mscx$/i, "") + ".mscz"
 
         // Filename sharing is opt-in, even for the primary details line.
         var displayName = prefs.title && title ? title : (prefs.filename ? filename : "")
-        var details = displayName ? activityMode + " " + displayName
-                                  : (playing ? "Playing a score" : "Composing")
+        var details = displayName ? activityMode + " " + displayName + (playing ? "" : "...")
+                                  : (playing ? "Playing a score" : "Composing...")
 
+        var listening = playing && prefs.playProgress
+        var currentMeasure = playback.known ? measureAt(score, playback.measure) : null
         var states = []
         if (!playing) {
             if (prefs.filename && displayName !== filename)
@@ -297,24 +402,30 @@ MuseScore {
                 states.push("Contains " + score.npages + " Pages")
             if (prefs.tracks)
                 states.push("Contains " + score.ntracks + " Tracks")
+            if (prefs.editDynamics) {
+                var editLevel = dynamicsAt(score, currentMeasure, playback, false)
+                if (editLevel)
+                    states.push("Dynamics: " + editLevel)
+            }
 
         } else {
-            if (prefs.playMeasure && playback.measure > 0) {
-                var measure = "Measure " + playback.measure
-                if (playback.measures > 0)
-                    measure += " of " + playback.measures
-                if (playback.beat > 0)
-                    measure += " · Beat " + playback.beat
-                states.push(measure)
+            var location = []
+            if (prefs.playMeasure && playback.measure > 0)
+                location.push("Measure " + playback.measure)
+            if (prefs.playSystem) {
+                var system = systemAt(score, currentMeasure)
+                if (system > 0)
+                    location.push("System " + system)
             }
-            if (prefs.playTime && playback.position >= 0) {
-                var time = formatPlaybackTime(playback.position)
-                if (playback.duration > 0)
-                    time += " / " + formatPlaybackTime(playback.duration)
-                states.push(time)
-            }
+            if (location.length)
+                states.push(location.join(" · "))
             if (prefs.playTempo && playback.bpm > 0)
                 states.push(playback.bpm + " BPM")
+            if (prefs.playDynamics) {
+                var playLevel = dynamicsAt(score, currentMeasure, playback, true)
+                if (playLevel)
+                    states.push("Dynamics: " + playLevel)
+            }
         }
 
         var activity = {
@@ -339,6 +450,22 @@ MuseScore {
         } else {
             stateIndex = 0
             playbackStateText = ""
+        }
+        // Override the application name for Listening, giving the score
+        // its own headline without a repeated MuseScore or Playing prefix.
+        if (listening) {
+            activity.name = bounded(displayName || "Untitled score")
+            var extra = (prefs.subtitle && subtitle) || (prefs.composer && (composer || author)) || ""
+            var rotating = activity.state || ""
+            delete activity.details
+            delete activity.state
+            if (extra) {
+                activity.details = bounded(extra)
+                if (rotating)
+                    activity.state = rotating
+            } else if (rotating) {
+                activity.details = rotating
+            }
         }
         refreshPlaybackText = false
 

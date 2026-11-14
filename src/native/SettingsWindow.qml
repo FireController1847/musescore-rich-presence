@@ -7,7 +7,7 @@ ApplicationWindow {
     id: root
     title: "Discord Rich Presence Settings"
     width: 440
-    height: 465
+    height: 500
     minimumWidth: 360
     minimumHeight: 370
     flags: Qt.Dialog
@@ -61,10 +61,11 @@ ApplicationWindow {
                 PreferenceCheck { text: "Score title"; preferenceKey: "title" }
                 PreferenceCheck { text: "Score filename (.mscz)"; preferenceKey: "filename" }
                 PreferenceCheck { text: "Subtitle"; preferenceKey: "subtitle" }
-                PreferenceCheck { text: "Composer"; preferenceKey: "composer" }
+                PreferenceCheck { text: "Composer / author"; preferenceKey: "composer" }
                 PreferenceCheck { text: "Measure count"; preferenceKey: "measures" }
                 PreferenceCheck { text: "Page count"; preferenceKey: "pages" }
                 PreferenceCheck { text: "Track count"; preferenceKey: "tracks" }
+                PreferenceCheck { text: "Current dynamics"; preferenceKey: "editDynamics" }
                 Label {
                     text: "Title is preferred. Filename is shared only when enabled, including as a fallback for untitled scores."
                     Layout.fillWidth: true
@@ -77,8 +78,9 @@ ApplicationWindow {
             ColumnLayout {
                 spacing: 4
                 enabled: presenceClient.preferences.playback
-                PreferenceCheck { text: "Current measure and beat"; preferenceKey: "playMeasure" }
-                PreferenceCheck { text: "Playback time and duration"; preferenceKey: "playTime" }
+                PreferenceCheck { text: "Current measure"; preferenceKey: "playMeasure" }
+                PreferenceCheck { text: "Current system"; preferenceKey: "playSystem" }
+                PreferenceCheck { text: "Current dynamics"; preferenceKey: "playDynamics" }
                 PreferenceCheck { text: "Current tempo (BPM)"; preferenceKey: "playTempo" }
                 PreferenceCheck { text: "Show playback progress bar"; preferenceKey: "playProgress" }
                 Label {
