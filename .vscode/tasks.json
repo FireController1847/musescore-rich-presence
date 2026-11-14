@@ -33,6 +33,30 @@
             "label": "Install plugin (MuseScore user directory)",
             "dependsOn": "Build plugin",
             "problemMatcher": []
+        },
+        {
+            "label": "Configure macOS release",
+            "type": "process",
+            "command": "cmake",
+            "args": [
+                "--preset",
+                "release"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Package macOS release",
+            "type": "process",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "release"
+            ],
+            "dependsOn": "Configure macOS release",
+            "problemMatcher": [
+                "$gcc"
+            ]
         }
     ]
 }

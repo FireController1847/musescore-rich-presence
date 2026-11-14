@@ -11,12 +11,35 @@
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist",
         "MUSESCORE_AUTO_DEPLOY": "ON"
       }
+    },
+    {
+      "name": "release",
+      "displayName": "Package macOS release",
+      "inherits": "dev",
+      "binaryDir": "${sourceDir}/build/release-macos",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "cacheVariables": {
+        "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64",
+        "MUSESCORE_AUTO_DEPLOY": "OFF",
+        "MUSESCORE_PACKAGE_MACOS": "ON"
+      }
     }
   ],
   "buildPresets": [
     {
       "name": "dev",
       "configurePreset": "dev"
+    },
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "targets": [
+        "package"
+      ]
     }
   ]
 }

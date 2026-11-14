@@ -58,6 +58,7 @@ The `dev` preset uses a Release build in `build/`, stages to `dist/`, and enable
 dist/MuseScoreRichPresence/
 ├── RichPresence.qml
 ├── current_score_info.png
+├── LICENSE
 └── DiscordIPC/
     ├── qmldir
     └── libDiscordIPC.dylib
@@ -70,6 +71,17 @@ The library extension varies by platform. The default destination is `Documents/
 - `MUSESCORE_PLUGINS_DIR`: override the user plugins directory in a local CMake cache or user preset.
 - `MUSESCORE_AUTO_DEPLOY=OFF`: packaging-only build; use the staged directory.
 - macOS selects the active Xcode compiler. Preserve the SDK 27.2 / Apple Clang 21 fallback to SDK 26.5 when installed; explicit compiler and SDK settings take precedence.
+
+### macOS release packaging
+
+```powershell
+cmake --preset release
+cmake --build --preset release
+```
+
+The `release` preset (macOS only) uses a separate build directory, disables user-directory deployment, and targets both Apple Silicon and Intel by default. The matching Qt SDK must support both architectures. To target one architecture, override `CMAKE_OSX_ARCHITECTURES` at configure time (e.g. `cmake --preset release -DCMAKE_OSX_ARCHITECTURES=arm64`). The VS Code **Package macOS release** task performs both steps.
+
+CMake stages the complete plugin in `dist/MuseScoreRichPresence/`; CPack independently packages the install manifest into `dist/MuseScoreRichPresence-<version>-macos-universal.zip` (or `-macos-arm64.zip` / `-macos-x64.zip`) with a matching `.sha256` checksum. The ZIP contains the top-level plugin folder and license, without Qt frameworks. Sign and verify the installed dylib ad hoc (`codesign --force --sign -`) after install-time RPATH changes, including the isolated CPack install. Do not sign only the build-tree binary. A signature failure must fail packaging. Ad-hoc signing is not Developer ID signing or notarization; downloaded plugins may still encounter Gatekeeper or host library validation. The maintainer verifies the archive in MuseScore before manually attaching it to a GitHub Release.
 
 ## Verification
 

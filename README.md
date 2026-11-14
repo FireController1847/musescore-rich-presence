@@ -97,7 +97,7 @@ cmake --build --preset dev
 
 The build stages the plugin in `dist/MuseScoreRichPresence/` and automatically installs it in your user plugins directory (normally `Documents/MuseScore4/Plugins/`).
 
-If your installation uses a different Qt SDK or plugins directory, see [build configuration](AGENTS.md#build-and-deployment).
+If your installation uses a different Qt SDK or plugins directory, see [build configuration](AGENTS.md#build-and-deployment). To create a distributable macOS ZIP instead of installing locally, see [release packaging](AGENTS.md#macos-release-packaging).
 
 ### Enable the plugin
 

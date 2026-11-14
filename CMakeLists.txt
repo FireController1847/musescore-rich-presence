@@ -90,8 +90,25 @@ install(TARGETS DiscordIPC
 )
 install(FILES src/plugin/DiscordIPC/qmldir
     DESTINATION MuseScoreRichPresence/DiscordIPC)
-install(FILES src/plugin/RichPresence.qml src/plugin/current_score_info.png
+install(FILES src/plugin/RichPresence.qml src/plugin/current_score_info.png LICENSE
     DESTINATION MuseScoreRichPresence)
+
+# Release packaging signs the installed binary, after CMake applies its
+# install RPATH. This also runs in CPack's isolated installation directory.
+option(MUSESCORE_PACKAGE_MACOS "Create a distributable macOS ZIP" OFF)
+if(MUSESCORE_PACKAGE_MACOS)
+    if(NOT APPLE OR NOT CMAKE_HOST_APPLE)
+        message(FATAL_ERROR "macOS release packaging requires a macOS host and target.")
+    endif()
+    find_program(CODESIGN_EXECUTABLE codesign REQUIRED)
+    install(CODE "
+        set(_plugin \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/MuseScoreRichPresence/DiscordIPC/$<TARGET_FILE_NAME:DiscordIPC>\")
+        execute_process(COMMAND \"${CODESIGN_EXECUTABLE}\" --force --sign - \"\${_plugin}\"
+            COMMAND_ERROR_IS_FATAL ANY)
+        execute_process(COMMAND \"${CODESIGN_EXECUTABLE}\" --verify --strict \"\${_plugin}\"
+            COMMAND_ERROR_IS_FATAL ANY)
+    ")
+endif()
 
 # A normal build produces the complete staged plugin automatically.
 add_custom_target(stage_plugin ALL
@@ -122,4 +139,26 @@ if(MUSESCORE_AUTO_DEPLOY)
         DEPENDS stage_plugin
         VERBATIM
     )
+endif()
+
+# CPack packages the install manifest, not the shared development staging
+# directory, so stale files and unrelated builds cannot leak into the ZIP.
+if(MUSESCORE_PACKAGE_MACOS)
+    if("arm64" IN_LIST CMAKE_OSX_ARCHITECTURES AND "x86_64" IN_LIST CMAKE_OSX_ARCHITECTURES)
+        set(_package_arch universal)
+    elseif(CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
+        set(_package_arch arm64)
+    elseif(CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64")
+        set(_package_arch x64)
+    else()
+        message(FATAL_ERROR "Set CMAKE_OSX_ARCHITECTURES to arm64, x86_64, or arm64;x86_64 for packaging.")
+    endif()
+    set(CPACK_GENERATOR ZIP)
+    set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
+    set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+    set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}-macos-${_package_arch}")
+    set(CPACK_PACKAGE_DIRECTORY "${CMAKE_SOURCE_DIR}/dist")
+    set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
+    set(CPACK_PACKAGE_CHECKSUM SHA256)
+    include(CPack)
 endif()
