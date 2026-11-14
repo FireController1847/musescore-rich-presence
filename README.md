@@ -65,11 +65,11 @@ The native plugin targets MuseScore Studio 4.7 and requires Discord Desktop. It 
 3. Extract the `MuseScoreRichPresence` folder into your MuseScore plugins directory (normally `Documents/MuseScore4/Plugins/`). If updating, replace the existing plugin folder.
 4. Open MuseScore and follow the [instructions below](#enable-the-plugin) to enable the plugin.
 
-The native plugin targets MuseScore Studio 4.7. macOS builds target macOS 13 or later; Windows requires x64. Only download a release asset for a supported platform.
+The native plugin targets MuseScore Studio 4.7. macOS builds target macOS 13 or later; Windows uses the x64 MuseScore build, including when running under emulation on Windows 11 ARM64. Only download a release asset for a supported platform.
 
 ### Build from source
 
-You'll need CMake 3.21 or newer, Ninja, a C++17 compiler, and a Qt development SDK matching the version and architecture bundled with MuseScore.
+You'll need CMake 3.21 or newer, a C++17 compiler, and a Qt development SDK matching the version and architecture bundled with MuseScore. On macOS, also install Ninja.
 
 On macOS, the build looks for the matching Qt SDK in `~/Qt`. For example, if MuseScore uses Qt 6.10.2, you can install it with:
 
@@ -77,13 +77,20 @@ On macOS, the build looks for the matching Qt SDK in `~/Qt`. For example, if Mus
 uvx --from aqtinstall aqt install-qt mac desktop 6.10.2 clang_64 -O "$HOME/Qt"
 ```
 
-On Windows, install Visual Studio 2022 Build Tools with Desktop development with C++ and the Qt 6.10.2 MSVC 64-bit SDK. Run builds from an x64 Developer PowerShell. The SDK can also be installed using vcpkg; see [Windows build setup](AGENTS.md#windows-development).
+On Windows, install Visual Studio 2022 Build Tools with Desktop development with C++, MSVC x64 target tools and the Qt 6.10.2 MSVC x64 SDK, even on ARM64. The SDK can also be installed using vcpkg; see [Windows build setup](AGENTS.md#windows-development).
 
 Close MuseScore before building. In VS Code, install the recommended CMake Tools extension and run the default **Build** task, or use the command line:
 
 ```powershell
 cmake --preset dev
 cmake --build --preset dev
+```
+
+On Windows:
+
+```powershell
+cmake --preset dev-windows
+cmake --build --preset dev-windows
 ```
 
 The build stages the plugin in `dist/MuseScoreRichPresence/` and automatically installs it in your user plugins directory (normally `Documents/MuseScore4/Plugins/`).

@@ -89,7 +89,7 @@ set(CMAKE_AUTORCC ON)
 
 if(WIN32)
     if(NOT MSVC OR NOT CMAKE_CXX_COMPILER_ARCHITECTURE_ID MATCHES "^(x64|X64|AMD64|amd64)$")
-        message(FATAL_ERROR "Windows builds require an x64 MSVC-compatible compiler. Use the VS 2022 x64 Developer PowerShell.")
+        message(FATAL_ERROR "Windows builds require an x64 MSVC-compatible compiler, even on Windows ARM64. Use the dev-windows or release-windows preset with the VS 2022 x64 target tools.")
     endif()
     find_package(Qt6 6.10.2 EXACT REQUIRED COMPONENTS Core Network Qml Quick)
     set(QT_VERSION_MAJOR 6)

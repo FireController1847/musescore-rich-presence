@@ -9,7 +9,13 @@
                 "--preset",
                 "dev"
             ],
-            "problemMatcher": []
+            "problemMatcher": [],
+            "windows": {
+                "args": [
+                    "--preset",
+                    "dev-windows"
+                ]
+            }
         },
         {
             "label": "Build plugin",
@@ -27,7 +33,14 @@
             },
             "problemMatcher": [
                 "$gcc"
-            ]
+            ],
+            "windows": {
+                "args": [
+                    "--build",
+                    "--preset",
+                    "dev-windows"
+                ]
+            }
         },
         {
             "label": "Install plugin (MuseScore user directory)",
@@ -42,7 +55,13 @@
                 "--preset",
                 "release"
             ],
-            "problemMatcher": []
+            "problemMatcher": [],
+            "windows": {
+                "args": [
+                    "--preset",
+                    "release-windows"
+                ]
+            }
         },
         {
             "label": "Publish plugin",
@@ -56,7 +75,14 @@
             "dependsOn": "Configure release",
             "problemMatcher": [
                 "$gcc"
-            ]
+            ],
+            "windows": {
+                "args": [
+                    "--build",
+                    "--preset",
+                    "release-windows"
+                ]
+            }
         },
         {
             "label": "Configure Windows release (vcpkg)",

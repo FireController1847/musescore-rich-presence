@@ -10,6 +10,11 @@
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist",
         "MUSESCORE_AUTO_DEPLOY": "ON"
+      },
+      "condition": {
+        "type": "notEquals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
       }
     },
     {
@@ -18,12 +23,9 @@
       "inherits": "dev",
       "binaryDir": "${sourceDir}/build/release-${hostSystemName}",
       "condition": {
-        "type": "inList",
-        "string": "${hostSystemName}",
-        "list": [
-          "Darwin",
-          "Windows"
-        ]
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
       },
       "cacheVariables": {
         "MUSESCORE_AUTO_DEPLOY": "OFF",
@@ -31,10 +33,40 @@
       }
     },
     {
-      "name": "release-vcpkg",
-      "displayName": "Publish Windows release (vcpkg)",
-      "inherits": "release",
-      "binaryDir": "${sourceDir}/build/release-vcpkg",
+      "name": "dev-windows",
+      "displayName": "Develop on Windows (x64)",
+      "inherits": "dev",
+      "generator": "Visual Studio 17 2022",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      },
+      "binaryDir": "${sourceDir}/build/dev-windows-x64",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": null,
+        "CMAKE_CONFIGURATION_TYPES": "Release"
+      }
+    },
+    {
+      "name": "release-windows",
+      "displayName": "Publish Windows release (x64)",
+      "inherits": "dev-windows",
+      "binaryDir": "${sourceDir}/build/release-windows-x64",
+      "cacheVariables": {
+        "MUSESCORE_AUTO_DEPLOY": "OFF",
+        "MUSESCORE_PACKAGE_RELEASE": "ON"
+      }
+    },
+    {
+      "name": "dev-vcpkg",
+      "displayName": "Develop on Windows (vcpkg)",
+      "inherits": "dev-windows",
+      "binaryDir": "${sourceDir}/build/dev-windows-x64-vcpkg",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -49,10 +81,10 @@
       }
     },
     {
-      "name": "dev-vcpkg",
-      "displayName": "Develop on Windows (vcpkg)",
-      "inherits": "dev",
-      "binaryDir": "${sourceDir}/build/dev-vcpkg",
+      "name": "release-vcpkg",
+      "displayName": "Publish Windows release (vcpkg)",
+      "inherits": "release-windows",
+      "binaryDir": "${sourceDir}/build/release-windows-x64-vcpkg",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -80,15 +112,30 @@
       ]
     },
     {
-      "name": "release-vcpkg",
-      "configurePreset": "release-vcpkg",
+      "name": "dev-windows",
+      "configurePreset": "dev-windows",
+      "configuration": "Release"
+    },
+    {
+      "name": "release-windows",
+      "configurePreset": "release-windows",
+      "configuration": "Release",
       "targets": [
         "publish"
       ]
     },
     {
       "name": "dev-vcpkg",
-      "configurePreset": "dev-vcpkg"
+      "configurePreset": "dev-vcpkg",
+      "configuration": "Release"
+    },
+    {
+      "name": "release-vcpkg",
+      "configurePreset": "release-vcpkg",
+      "configuration": "Release",
+      "targets": [
+        "publish"
+      ]
     }
   ]
 }
