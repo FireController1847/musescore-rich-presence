@@ -84,7 +84,7 @@ ApplicationWindow {
                 PreferenceCheck { text: "Current tempo (BPM)"; preferenceKey: "playTempo" }
                 PreferenceCheck { text: "Show playback progress bar"; preferenceKey: "playProgress" }
                 Label {
-                    text: "Listening shows the score title, author and progress bar. Turn off the progress bar to show rotating playback statistics in the Playing activity instead."
+                    text: "Listening shows the score title, author, rotating playback statistics and progress bar. Turn off the progress bar to use the Playing activity instead."
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
                     opacity: 0.7
