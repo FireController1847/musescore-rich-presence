@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.21)
 
 option(MUSESCORE_PACKAGE_RELEASE "Create a distributable release ZIP" OFF)
+# Qt 6.10 supports macOS 13 and newer. Set the deployment target before
+# project() so a newer SDK does not become the minimum runtime version.
+if(CMAKE_HOST_APPLE AND NOT CMAKE_OSX_DEPLOYMENT_TARGET
+   AND "$ENV{MACOSX_DEPLOYMENT_TARGET}" STREQUAL "")
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "Minimum macOS version" FORCE)
+endif()
 # Set the default architecture before compiler detection, only on macOS.
 if(CMAKE_HOST_APPLE AND MUSESCORE_PACKAGE_RELEASE
    AND NOT DEFINED CMAKE_OSX_ARCHITECTURES AND "$ENV{CMAKE_OSX_ARCHITECTURES}" STREQUAL "")

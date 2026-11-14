@@ -71,6 +71,7 @@ The library is `libDiscordIPC.dylib` on macOS and `DiscordIPC.dll` on Windows. T
 - `MUSESCORE_APP`: override the macOS MuseScore app bundle used for Qt detection.
 - `MUSESCORE_PLUGINS_DIR`: override the user plugins directory in a local CMake cache or user preset.
 - `MUSESCORE_AUTO_DEPLOY=OFF`: packaging-only build; use the staged directory.
+- macOS defaults to deployment target 13.0 (Qt 6.10's minimum), independently of the build SDK. Explicit nonempty deployment targets or environment overrides take precedence. Reconfigure older caches with `-DCMAKE_OSX_DEPLOYMENT_TARGET=13.0` if needed; inspect the packaged dylib with `vtool -show-build` to confirm both slices.
 - macOS selects the active Xcode compiler. Preserve the SDK 27.2 / Apple Clang 21 fallback to SDK 26.5 when installed; explicit compiler and SDK settings take precedence.
 
 ### Windows development
