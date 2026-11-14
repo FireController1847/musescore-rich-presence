@@ -319,6 +319,35 @@ MuseScore {
         return rest
     }
 
+    function sustainAt(score, segment, track) {
+        if (!segment || track < 0 || track >= score.ntracks)
+            return false
+        try {
+            var staff = score.staves[Math.floor(track / 4)]
+            var part = staff ? staff.part : null
+            if (!part)
+                return false
+            var tick = segment.tick
+            var spanners = score.spanners
+            for (var i = 0; i < spanners.length; i++) {
+                var pedal = spanners[i]
+                if (pedal.type !== Element.PEDAL || !pedal.play)
+                    continue
+                // The pedal applies to the entire instrument, not just the
+                // staff on which the pedal line is drawn.
+                if (pedal.track < part.startTrack || pedal.track >= part.endTrack)
+                    continue
+                var start = pedal.spannerTick.ticks
+                var end = start + pedal.spannerTicks.ticks
+                if (tick >= start && tick < end)
+                    return true
+            }
+        } catch (error) {
+            // Leave the instrument name alone if pedal data is unavailable.
+        }
+        return false
+    }
+
     function keyName(score, staff, segment) {
         if (!staff || !segment || !staff.isPitchedStaff(segment.fraction))
             return ""
@@ -588,7 +617,10 @@ MuseScore {
             pushRotation(states, [(playing ? prefs.playDynamics : prefs.editDynamics) ? info.dynamics : "",
                                   prefs.playTempo && info.bpm > 0 ? info.bpm + " BPM" : ""])
             pushRotation(states, [prefs.currentKey ? info.key : "", prefs.currentTime ? info.time : ""])
-            pushRotation(states, [prefs.currentInstrument ? info.instrument : ""])
+            if (prefs.currentInstrument && info.instrument) {
+                var sustained = listening && sustainAt(score, segment, track)
+                pushRotation(states, [info.instrument, sustained ? "Sustained" : ""])
+            }
         }
 
         var activity = {
