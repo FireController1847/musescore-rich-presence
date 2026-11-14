@@ -35,7 +35,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Configure macOS release",
+            "label": "Configure release",
             "type": "process",
             "command": "cmake",
             "args": [
@@ -45,7 +45,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Package macOS release",
+            "label": "Publish plugin",
             "type": "process",
             "command": "cmake",
             "args": [
@@ -53,7 +53,7 @@
                 "--preset",
                 "release"
             ],
-            "dependsOn": "Configure macOS release",
+            "dependsOn": "Configure release",
             "problemMatcher": [
                 "$gcc"
             ]

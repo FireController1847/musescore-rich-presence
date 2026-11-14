@@ -161,4 +161,14 @@ if(MUSESCORE_PACKAGE_MACOS)
     set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
     set(CPACK_PACKAGE_CHECKSUM SHA256)
     include(CPack)
+
+    # A release build always produces the uploadable archive. Explicitly
+    # run CPack after staging so Publish also works from CMake Tools.
+    add_custom_target(publish ALL
+        COMMAND "${CMAKE_CPACK_COMMAND}" --config "${CMAKE_BINARY_DIR}/CPackConfig.cmake"
+            -C $<CONFIG> -B "${CMAKE_SOURCE_DIR}/dist"
+        DEPENDS stage_plugin
+        COMMENT "Publishing ${CPACK_PACKAGE_FILE_NAME}.zip to dist/"
+        VERBATIM
+    )
 endif()

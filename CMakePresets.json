@@ -14,7 +14,7 @@
     },
     {
       "name": "release",
-      "displayName": "Package macOS release",
+      "displayName": "Publish release",
       "inherits": "dev",
       "binaryDir": "${sourceDir}/build/release-macos",
       "condition": {
@@ -38,7 +38,7 @@
       "name": "release",
       "configurePreset": "release",
       "targets": [
-        "package"
+        "publish"
       ]
     }
   ]
