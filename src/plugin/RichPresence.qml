@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import MuseScore 3.0
-import "DiscordIPC" as IPC
+import QtQuick.Controls 2.15
+import QtQuick.Window 2.15
 
 MuseScore {
     id: root
@@ -16,50 +17,96 @@ MuseScore {
     property double startedAt: 0
     property int stateIndex: 0
 
-    IPC.DiscordClient {
-        id: discord
+    property var bridge: null
+    property var discord: bridge ? bridge.client : null
+    property string loadError: ""
+
+    // The legacy loader discovers metadata without loading the module.
+    // Load on invocation so native import errors can be shown to the user.
+    function loadBridge() {
+        if (!bridge) {
+            bridge = Qt.createQmlObject(
+                'import QtQuick 2.15; import "DiscordIPC" 1.0 as IPC; QtObject { property var client: IPC.DiscordClient }',
+                root, Qt.resolvedUrl("DiscordBridge.qml").toString())
+        }
+    }
+
+    Connections {
+        target: root.discord
+        function onEnabledChanged() {
+            if (!root.discord.enabled) {
+                root.enabledPresence = false
+                refresh.stop()
+            }
+        }
+    }
+
+    Window {
+        id: statusWindow
+        title: "Discord Rich Presence"
+        width: 420
+        height: 150
+        flags: Qt.Dialog
+        modality: Qt.NonModal
+        visible: false
+
+        Column {
+            anchors.fill: parent
+            anchors.margins: 16
+            spacing: 12
+
+            Label {
+                width: parent.width
+                wrapMode: Text.Wrap
+                text: root.loadError || (root.discord ? root.discord.status : "Not started")
+            }
+            Button {
+                text: "Close"
+                onClicked: statusWindow.close()
+            }
+        }
     }
 
     Timer {
         id: refresh
         interval: 5000
         repeat: true
-        onTriggered: root.updateActivity()
+        onTriggered: {
+            try {
+                root.updateActivity()
+            } catch (error) {
+                console.error("MuseScore Rich Presence: score update failed: " + error)
+            }
+        }
     }
 
     onRun: {
-        // MuseScore can create another instance when the menu action is
-        // invoked again. Keep the same toggle behavior as the old plugin.
-        var previous = Qt.museScoreRichPresence
-        if (previous && previous.enabledPresence) {
-            previous.stopPresence()
-            return
+        console.log("MuseScore Rich Presence: menu invoked")
+        loadError = ""
+        try {
+            loadBridge()
+            if (discord.enabled) {
+                discord.stop()
+            } else {
+                enabledPresence = true
+                lastScore = ""
+                stateIndex = 0
+                startedAt = Math.floor(Date.now() / 1000)
+                discord.start("577645453429047314")
+                // Publish a fallback before accessing score-specific properties.
+                discord.setActivity({
+                    details: "MuseScore",
+                    state: "Composing",
+                    timestamps: { start: startedAt }
+                })
+                refresh.start()
+                updateActivity()
+            }
+        } catch (error) {
+            loadError = String(error)
+            console.error("MuseScore Rich Presence: " + loadError)
         }
-
-        Qt.museScoreRichPresence = root
-        enabledPresence = true
-        lastScore = ""
-        stateIndex = 0
-        startedAt = Math.floor(Date.now() / 1000)
-        discord.start("577645453429047314")
-        updateActivity()
-        refresh.start()
-        console.log("MuseScore Rich Presence enabled")
-    }
-
-    Component.onDestruction: {
-        refresh.stop()
-        if (Qt.museScoreRichPresence === root)
-            Qt.museScoreRichPresence = null
-    }
-
-    function stopPresence() {
-        refresh.stop()
-        discord.stop()
-        enabledPresence = false
-        if (Qt.museScoreRichPresence === root)
-            Qt.museScoreRichPresence = null
-        console.log("MuseScore Rich Presence disabled")
+        statusWindow.show()
     }
 
     function bounded(value) {
@@ -75,7 +122,7 @@ MuseScore {
     }
 
     function updateActivity() {
-        if (!enabledPresence)
+        if (!enabledPresence || !discord || !discord.enabled)
             return
 
         var score = curScore

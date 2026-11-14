@@ -90,22 +90,23 @@ No Node.js, intermediate JSON files, external companion processes, or administra
 
 ### Build from source
 
-Requires CMake 3.16+, a C++17 compiler, and a Qt development SDK with Core, Network, and Qml matching your MuseScore installation. Do not assume that the newest Qt SDK is compatible with the bundled Qt runtime.
+Requires CMake 3.21+, Ninja, a C++17 compiler, and a Qt development SDK with Core, Network, and Qml matching your MuseScore installation.
 
-On macOS, use the Xcode Command Line Tools and a matching Qt SDK. To identify the bundled Qt version and architecture, inspect the installed application (adjust the application path as needed):
+Open the folder in VS Code and install the recommended CMake Tools extension. CMake configures automatically using the `dev` preset; **Build** (or the default Build task) stages the plugin into `dist/`.
+
+On macOS, the build detects MuseScore's bundled Qt major/minor version and searches the standard `~/Qt` SDK directory. Install the matching SDK once if needed. For example, for MuseScore using Qt 6.10.2:
 
 ```powershell
-$app = "/Applications/MuseScore 4.app"
-& /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$app/Contents/Frameworks/QtCore.framework/Resources/Info.plist"
-& file "$app/Contents/Frameworks/QtCore.framework/QtCore"
+uvx --from aqtinstall aqt install-qt mac desktop 6.10.2 clang_64 -O "$HOME/Qt"
 ```
 
-Configure, build, and stage the plugin with the matching SDK. Replace the example Qt SDK path with your actual installation:
+A custom Qt SDK can be selected with `-DCMAKE_PREFIX_PATH=/path/to/qt`. The macOS configuration also selects the active Xcode compiler and works around the known SDK 27.2 / Clang 21 mismatch when SDK 26.5 is installed. Existing custom build settings take precedence.
+
+Outside VS Code:
 
 ```powershell
-cmake -S . -B build "-DCMAKE_PREFIX_PATH=$HOME/Qt/6.x.y/macos" -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release
-cmake --install build --config Release --prefix "$PWD/dist"
+cmake --preset dev
+cmake --build --preset dev
 ```
 
 The staged plugin directory contains:
@@ -120,9 +121,11 @@ dist/MuseScoreRichPresence/
 
 The native library has a platform-specific extension. Copy the entire `MuseScoreRichPresence` directory into your MuseScore user plugins directory (shown in MuseScore's preferences). Preserve the directory structure.
 
-Open Discord Desktop, restart MuseScore, enable the plugin in the Plugins Manager, and invoke **Discord Rich Presence** from the Plugins menu. Invoke it again to disable presence.
+Alternatively, use the VS Code task **Install plugin (MuseScore user directory)** to build and install directly into the default user plugin directory. Change the destination if your MuseScore preferences use a different path.
 
-If MuseScore cannot load the native module, check that its Qt version and architecture match the SDK used to build the extension. Native module loading in the installed application is the first compatibility milestone.
+Quit MuseScore before replacing the native library. Open Discord Desktop, restart MuseScore, enable the plugin in the Plugins Manager, and invoke **Discord Rich Presence** from the Plugins menu. The status window displays native module loading errors, connection progress, or confirmation that Discord accepted the activity. Closing the status window does not disable Rich Presence. Invoke the plugin again to disable it.
+
+If no activity appears, inspect the status window and MuseScore's application logs for `MuseScore Rich Presence` messages. Listing the plugin in the manager alone does not establish that its native module loaded. Check that Discord activity sharing is enabled and that the Qt SDK version and architecture match MuseScore.
 
 > [!NOTE]
 > For the original Windows implementation and its installation instructions, see the [master branch](https://github.com/FireController1847/musescore-rich-presence/tree/master).

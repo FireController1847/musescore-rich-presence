@@ -1,0 +1,58 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Configure plugin",
+            "type": "process",
+            "command": "cmake",
+            "args": [
+                "--preset",
+                "dev"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Build plugin",
+            "type": "process",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "dev"
+            ],
+            "dependsOn": "Configure plugin",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "Install plugin (MuseScore user directory)",
+            "type": "process",
+            "command": "cmake",
+            "args": [
+                "--install",
+                "${workspaceFolder}/build",
+                "--config",
+                "Release",
+                "--prefix",
+                "${env:HOME}/Documents/MuseScore4/Plugins"
+            ],
+            "windows": {
+                "args": [
+                    "--install",
+                    "${workspaceFolder}/build",
+                    "--config",
+                    "Release",
+                    "--prefix",
+                    "${env:USERPROFILE}/Documents/MuseScore4/Plugins"
+                ]
+            },
+            "dependsOn": "Build plugin",
+            "problemMatcher": []
+        }
+    ]
+}

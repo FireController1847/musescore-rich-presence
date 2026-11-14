@@ -13,12 +13,16 @@ class DiscordIPC : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool ready READ ready NOTIFY readyChanged)
+    Q_PROPERTY(bool enabled READ enabled NOTIFY enabledChanged)
+    Q_PROPERTY(QString status READ status NOTIFY statusChanged)
 
 public:
     explicit DiscordIPC(QObject *parent = nullptr);
     ~DiscordIPC() override;
 
     bool ready() const { return m_ready; }
+    bool enabled() const { return m_enabled; }
+    QString status() const { return m_status; }
 
     Q_INVOKABLE void start(const QString &clientId);
     Q_INVOKABLE void stop();
@@ -26,6 +30,8 @@ public:
 
 signals:
     void readyChanged();
+    void enabledChanged();
+    void statusChanged();
 
 private:
     void tick();
@@ -33,6 +39,7 @@ private:
     void disconnected();
     void receive();
     void setReady(bool ready);
+    void setStatus(const QString &status);
     void sendActivity(const QJsonValue &activity);
     void sendFrame(quint32 opcode, const QByteArray &payload);
     QStringList socketPaths() const;
@@ -43,6 +50,8 @@ private:
     QByteArray m_buffer;
     QStringList m_paths;
     QString m_clientId;
+    QString m_status = QStringLiteral("Disabled");
+    QString m_currentPath;
     QJsonObject m_activity;
     int m_nextPath = 0;
     bool m_enabled = false;

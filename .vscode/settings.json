@@ -1,3 +1,6 @@
 {
-    "discord.enabled": false
+    "discord.enabled": false,
+    "cmake.useCMakePresets": "always",
+    "cmake.configureOnOpen": true,
+    "cmake.defaultConfigurePreset": "dev"
 }

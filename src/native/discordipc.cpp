@@ -2,6 +2,10 @@
 
 #include <QCoreApplication>
 #include <QDir>
+#include <QFileInfo>
+#ifdef Q_OS_MACOS
+#include <unistd.h>
+#endif
 #include <QJsonDocument>
 #include <QJsonValue>
 #include <QUuid>
@@ -29,6 +33,10 @@ DiscordIPC::DiscordIPC(QObject *parent) : QObject(parent)
     connect(&m_socket, &QLocalSocket::connected, this, &DiscordIPC::connected);
     connect(&m_socket, &QLocalSocket::disconnected, this, &DiscordIPC::disconnected);
     connect(&m_socket, &QLocalSocket::readyRead, this, &DiscordIPC::receive);
+    connect(&m_socket, &QLocalSocket::errorOccurred, this, [this](QLocalSocket::LocalSocketError) {
+        if (m_enabled)
+            setStatus(QStringLiteral("IPC error: %1 (%2)").arg(m_socket.errorString(), m_currentPath));
+    });
 }
 
 DiscordIPC::~DiscordIPC()
@@ -49,7 +57,13 @@ QStringList DiscordIPC::socketPaths() const
         if (!dir.isEmpty())
             dirs << dir;
     }
-    dirs << QStringLiteral("/tmp");
+#ifdef Q_OS_MACOS
+    char userTemp[4096];
+    const size_t size = confstr(_CS_DARWIN_USER_TEMP_DIR, userTemp, sizeof(userTemp));
+    if (size > 0 && size <= sizeof(userTemp))
+        dirs << QString::fromLocal8Bit(userTemp);
+#endif
+    dirs << QDir::tempPath() << QStringLiteral("/tmp");
     dirs.removeDuplicates();
 
     for (const QString &dir : dirs) {
@@ -71,12 +85,16 @@ void DiscordIPC::start(const QString &clientId)
     m_paths = socketPaths();
     m_nextPath = 0;
     m_enabled = true;
+    emit enabledChanged();
+    setStatus(QStringLiteral("Searching for Discord Desktop"));
+    qInfo() << "MuseScore Rich Presence: IPC candidates" << m_paths;
     m_retry.start();
     tick();
 }
 
 void DiscordIPC::stop()
 {
+    const bool wasEnabled = m_enabled;
     m_enabled = false;
     m_retry.stop();
 
@@ -92,6 +110,9 @@ void DiscordIPC::stop()
     m_buffer.clear();
     m_hasActivity = false;
     m_activity = QJsonObject();
+    setStatus(QStringLiteral("Disabled"));
+    if (wasEnabled)
+        emit enabledChanged();
 }
 
 void DiscordIPC::tick()
@@ -108,10 +129,26 @@ void DiscordIPC::tick()
     }
 
     m_buffer.clear();
-    const QString path = m_paths.at(m_nextPath);
-    m_nextPath = (m_nextPath + 1) % m_paths.size();
-    m_attempt.restart();
-    m_socket.connectToServer(path, QIODevice::ReadWrite);
+    // On Unix, skip nonexistent paths immediately rather than taking up
+    // to a minute to reach the actual socket.
+    m_paths = socketPaths();
+    if (m_paths.isEmpty())
+        return;
+    m_nextPath %= m_paths.size();
+    for (int i = 0; i < m_paths.size(); ++i) {
+        const QString path = m_paths.at(m_nextPath);
+        m_nextPath = (m_nextPath + 1) % m_paths.size();
+#ifndef Q_OS_WIN
+        if (!QFileInfo::exists(path))
+            continue;
+#endif
+        m_currentPath = path;
+        setStatus(QStringLiteral("Connecting to %1").arg(path));
+        m_attempt.restart();
+        m_socket.connectToServer(path, QIODevice::ReadWrite);
+        return;
+    }
+    setStatus(QStringLiteral("Waiting for Discord Desktop (no IPC socket found)"));
 }
 
 void DiscordIPC::connected()
@@ -122,6 +159,7 @@ void DiscordIPC::connected()
     }
 
     m_attempt.restart();
+    setStatus(QStringLiteral("Connected to socket; waiting for Discord handshake"));
     sendFrame(Handshake, encode({
         {QStringLiteral("v"), 1},
         {QStringLiteral("client_id"), m_clientId}
@@ -132,6 +170,17 @@ void DiscordIPC::disconnected()
 {
     setReady(false);
     m_buffer.clear();
+    if (m_enabled)
+        setStatus(QStringLiteral("Discord disconnected; reconnecting"));
+}
+
+void DiscordIPC::setStatus(const QString &status)
+{
+    if (m_status == status)
+        return;
+    m_status = status;
+    qInfo().noquote() << "MuseScore Rich Presence:" << status;
+    emit statusChanged();
 }
 
 void DiscordIPC::setReady(bool ready)
@@ -177,7 +226,12 @@ void DiscordIPC::sendFrame(quint32 opcode, const QByteArray &payload)
     qToLittleEndian<quint32>(opcode, packet.data());
     qToLittleEndian<quint32>(static_cast<quint32>(payload.size()), packet.data() + 4);
     packet.append(payload);
-    m_socket.write(packet);
+    if (m_socket.write(packet) != packet.size()) {
+        setStatus(QStringLiteral("Failed to write Discord IPC packet"));
+        m_socket.abort();
+    } else {
+        m_socket.flush();
+    }
 }
 
 void DiscordIPC::receive()
@@ -203,7 +257,7 @@ void DiscordIPC::receive()
         if (opcode == Ping) {
             sendFrame(Pong, payload);
         } else if (opcode == Close) {
-            qWarning() << "MuseScore Rich Presence: Discord closed the IPC connection";
+            qWarning() << "MuseScore Rich Presence: Discord closed IPC:" << payload;
             m_socket.abort();
             return;
         } else if (opcode == Frame) {
@@ -213,12 +267,16 @@ void DiscordIPC::receive()
                 // Retry this same candidate first if Discord restarts.
                 m_nextPath = (m_nextPath + m_paths.size() - 1) % m_paths.size();
                 setReady(true);
+                setStatus(QStringLiteral("Discord handshake accepted; publishing activity"));
                 if (m_hasActivity)
                     sendActivity(m_activity);
             } else if (event == QStringLiteral("ERROR")) {
-                qWarning() << "MuseScore Rich Presence: Discord RPC error"
-                           << message.value(QStringLiteral("data")).toObject()
-                                  .value(QStringLiteral("message")).toString();
+                setStatus(QStringLiteral("Discord RPC error: %1").arg(
+                    message.value(QStringLiteral("data")).toObject()
+                           .value(QStringLiteral("message")).toString()));
+            } else if (message.value(QStringLiteral("cmd")).toString() == QStringLiteral("SET_ACTIVITY")
+                       && m_enabled && m_ready) {
+                setStatus(QStringLiteral("Discord accepted activity"));
             }
         }
     }
