@@ -229,7 +229,7 @@ MuseScore {
                     type: 0,
                     status_display_type: 0,
                     details: "Browsing scores",
-                    assets: { large_image: "musescore4-square", large_text: "MuseScore 4" },
+                    assets: { large_image: "musescore4", large_text: "MuseScore 4" },
                     instance: false
                 }
                 if (prefs.elapsed)
@@ -322,10 +322,8 @@ MuseScore {
             status_display_type: 0,
             details: bounded(details),
             assets: {
-                large_image: "musescore4-square",
-                small_image: "musescore4-circle",
-                large_text: "MuseScore 4",
-                small_text: activityMode === "Editing" ? "Composing" : activityMode
+                large_image: "musescore4",
+                large_text: "MuseScore 4"
             },
             instance: false
         }
