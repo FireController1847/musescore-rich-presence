@@ -38,12 +38,17 @@ Whether you're composing, arranging, or transcribing, your Discord profile can r
   <img src="https://i.imgur.com/Izgtps5.png" width="270" alt="Rich Presence example 3">
 </p>
 
-| # | Viewing | Editing | Listening |
-| :--- | :--- | :--- | :--- |
-| 1 | Measures | Measure · Staff | System · Page |
-| 2 | Systems | Dynamics · BPM | Dynamics · BPM |
-| 3 | Staves | Key · Time Signature | Key · Time Signature |
-| 4 | Pages | Instrument | Instrument · Sustained¹ |
+<table align="center">
+  <thead>
+    <tr><th>#</th><th>Viewing</th><th>Editing</th><th>Listening</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>Measures</td><td>Measure · Staff</td><td>System · Page</td></tr>
+    <tr><td>2</td><td>Systems</td><td>Dynamics · BPM</td><td>Dynamics · BPM</td></tr>
+    <tr><td>3</td><td>Staves</td><td>Key · Time Signature</td><td>Key · Time Signature</td></tr>
+    <tr><td>4</td><td>Pages</td><td>Instrument</td><td>Instrument · Sustained¹</td></tr>
+  </tbody>
+</table>
 
 ¹ Sustained appears only when an active pedal marking is detected. Playing without the progress bar uses the same rotations, except for sustain detection.
 
