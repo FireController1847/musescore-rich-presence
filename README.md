@@ -59,17 +59,9 @@ Whether you're composing, arranging, or transcribing, your Discord profile can r
 ## Preview
 
 <p align="center">
-  <img src="https://i.imgur.com/9jbFAto.png" width="270" alt="Rich Presence example 1">
-  <img src="https://i.imgur.com/jDGESp9.png" width="270" alt="Rich Presence example 2">
-  <img src="https://i.imgur.com/Z7xH5ku.png" width="270" alt="Rich Presence example 3">
-</p>
-<p align="center">
-  <img src="https://i.imgur.com/7sWW6Rw.png" width="270" alt="Rich Presence example 4">
-  <img src="https://i.imgur.com/pJ2ACGV.png" width="270" alt="Rich Presence example 5">
-</p>
-<p align="center">
-  <img src="https://i.imgur.com/4QCRN4D.png" width="270" alt="Rich Presence example 6">
-  <img src="https://i.imgur.com/bDRqdES.png" width="270" alt="Rich Presence example 7">
+  <img src="https://i.imgur.com/ygCtOAM.png" width="270" alt="Rich Presence example 1">
+  <img src="https://i.imgur.com/Izgtps5.png" width="270" alt="Rich Presence example 2">
+  <img src="https://i.imgur.com/l88zb4H.png" width="270" alt="Rich Presence example 3">
 </p>
 
 <p align="center"><em>Examples from the original implementation, showcasing rotating score information.</em></p>
