@@ -34,6 +34,12 @@ ToolButton {
     ToolTip.delay: 350
     ToolTip.text: "Discord Rich Presence: " + presenceClient.status
                   + (presenceClient.enabled ? "\nClick to disable" : "\nClick to enable")
+                  + "\nRight-click for settings"
+
+    TapHandler {
+        acceptedButtons: Qt.RightButton
+        onTapped: presenceClient.openSettings()
+    }
 
     onClicked: presenceClient.toggle()
 }

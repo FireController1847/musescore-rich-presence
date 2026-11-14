@@ -11,6 +11,7 @@
 #include <QList>
 #include <QPointer>
 #include <QQuickItem>
+#include <QSettings>
 
 class DiscordIPC : public QObject
 {
@@ -19,6 +20,7 @@ class DiscordIPC : public QObject
     Q_PROPERTY(bool enabled READ enabled NOTIFY enabledChanged)
     Q_PROPERTY(QString status READ status NOTIFY statusChanged)
     Q_PROPERTY(bool statusBarAvailable READ statusBarAvailable)
+    Q_PROPERTY(QVariantMap preferences READ preferences NOTIFY preferencesChanged)
 
 public:
     explicit DiscordIPC(QObject *parent = nullptr);
@@ -29,6 +31,10 @@ public:
     QString status() const { return m_status; }
 
     bool statusBarAvailable() const;
+    QVariantMap preferences() const { return m_preferences; }
+    Q_INVOKABLE void setPreference(const QString &key, const QVariant &value);
+    Q_INVOKABLE QVariantMap playbackSnapshot() const;
+    Q_INVOKABLE void openSettings();
     Q_INVOKABLE bool initializeMonitor(const QString &clientId);
     Q_INVOKABLE void start(const QString &clientId);
     Q_INVOKABLE void stop();
@@ -40,6 +46,7 @@ signals:
     void readyChanged();
     void enabledChanged();
     void statusChanged();
+    void preferencesChanged();
 
 private:
     void tick();
@@ -69,5 +76,8 @@ private:
     bool m_hasActivity = false;
     bool m_monitorInitialized = false;
     QTimer m_uiRefresh;
+    QVariantMap m_preferences;
+    QSettings m_settings{QStringLiteral("MuseScoreRichPresence"), QStringLiteral("Preferences")};
+    QPointer<QObject> m_settingsWindow;
     QList<QPointer<QQuickItem>> m_statusItems;
 };

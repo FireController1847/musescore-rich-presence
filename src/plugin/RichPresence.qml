@@ -18,6 +18,8 @@ MuseScore {
     property int stateIndex: 0
     property bool hasScore: false
     property double nextRotation: 0
+    property string activityMode: "Editing"
+    property bool idlePublished: false
 
     property var bridge: null
     property var discord: bridge ? bridge.client : null
@@ -35,6 +37,13 @@ MuseScore {
 
     Connections {
         target: root.discord
+        function onPreferencesChanged() {
+            if (!root.monitoring)
+                return
+            root.stateIndex = 0
+            root.nextRotation = Date.now() + root.discord.preferences.rotation * 1000
+            root.updateSafely()
+        }
         function onEnabledChanged() {
             if (!root.monitoring || !root.discord)
                 return
@@ -43,6 +52,8 @@ MuseScore {
             root.lastScore = ""
             root.stateIndex = 0
             root.nextRotation = 0
+            root.activityMode = "Editing"
+            root.idlePublished = false
 
             if (root.discord.enabled) {
                 refresh.start()
@@ -57,7 +68,7 @@ MuseScore {
         id: statusWindow
         title: "Discord Rich Presence"
         width: 420
-        height: 150
+        height: 190
         flags: Qt.Dialog
         modality: Qt.NonModal
         visible: false
@@ -71,6 +82,11 @@ MuseScore {
                 width: parent.width
                 wrapMode: Text.Wrap
                 text: root.loadError || (root.discord ? root.discord.status : "Not started")
+            }
+            Button {
+                text: "Settings…"
+                enabled: !!root.discord
+                onClicked: root.discord.openSettings()
             }
             Button {
                 text: "Close"
@@ -93,7 +109,7 @@ MuseScore {
             loadBridge()
             if (discord.initializeMonitor("577645453429047314")) {
                 // Only the first QML instance owns score monitoring. The
-                // native singleton and its tray menu can toggle it later.
+                // native singleton and status bar can toggle it later.
                 monitoring = true
                 discord.start("577645453429047314")
             } else {
@@ -129,67 +145,127 @@ MuseScore {
         return result
     }
 
+    onScoreStateChanged: function(state) {
+        // Selection-only changes (including selecting a note on pause)
+        // are not edits. An actual layout-changing edit ends paused mode.
+        if (monitoring && activityMode === "Paused" && state
+                && (state.undoRedo || state.instrumentsChanged
+                    || (state.startLayoutTick !== undefined && state.startLayoutTick >= 0))) {
+            activityMode = "Editing"
+            updateSafely()
+        }
+    }
+
     function updateActivity() {
         if (!monitoring || !discord || !discord.enabled)
             return
 
+        var prefs = discord.preferences
         var score = curScore
+        var now = Date.now()
         if (!score) {
             if (hasScore) {
                 hasScore = false
                 lastScore = ""
                 stateIndex = 0
                 nextRotation = 0
+                activityMode = "Editing"
+                idlePublished = false
             }
-            discord.clearActivity()
+            if (prefs.hideWithoutScore) {
+                discord.clearActivity()
+                idlePublished = false
+            } else {
+                if (!idlePublished) {
+                    startedAt = Math.floor(now / 1000)
+                    idlePublished = true
+                }
+                var idle = {
+                    details: "Browsing scores",
+                    assets: { large_image: "musescore4-square", large_text: "MuseScore 4" },
+                    instance: false
+                }
+                if (prefs.elapsed)
+                    idle.timestamps = { start: startedAt }
+                discord.setActivity(idle)
+            }
             return
         }
 
-        var now = Date.now()
+        idlePublished = false
         var name = String(score.scoreName || "Untitled")
         if (!hasScore || name !== lastScore) {
             hasScore = true
             lastScore = name
             startedAt = Math.floor(now / 1000)
             stateIndex = 0
-            nextRotation = now + 5000
+            nextRotation = now + prefs.rotation * 1000
+            activityMode = "Editing"
         } else if (now >= nextRotation) {
             stateIndex++
-            nextRotation = now + 5000
+            nextRotation = now + prefs.rotation * 1000
         }
 
+        if (prefs.playback) {
+            var playback = discord.playbackSnapshot()
+            if (!playback.known) {
+                activityMode = "Editing"
+            } else if (playback.playing) {
+                activityMode = "Playing"
+            } else if (activityMode === "Playing" || activityMode === "Paused") {
+                var atEnd = playback.duration > 0 && playback.position >= playback.duration - 100
+                activityMode = playback.position > 0 && !atEnd ? "Paused" : "Editing"
+            }
+        } else {
+            activityMode = "Editing"
+        }
+
+        var title = String(score.title || score.metaTag("workTitle") || "").trim()
+        var subtitle = String(score.metaTag("subtitle") || "").trim()
+        var composer = String(score.composer || score.metaTag("composer") || "").trim()
+        var filename = name.replace(/\\/g, "/").split("/").pop()
+        if (!/\.mscz$/i.test(filename))
+            filename = filename.replace(/\.mscx$/i, "") + ".mscz"
+
+        // Filename sharing is opt-in, even for the primary details line.
+        var displayName = prefs.title && title ? title : (prefs.filename ? filename : "")
+        var details = displayName
+                ? (activityMode === "Paused" ? "Paused: " : activityMode + " ") + displayName
+                : (activityMode === "Playing" ? "Playing a score"
+                   : activityMode === "Paused" ? "Playback paused" : "Composing")
+
         var states = []
-        var title = score.title || score.metaTag("workTitle")
-        var subtitle = score.metaTag("subtitle")
-        var composer = score.composer || score.metaTag("composer")
-
-        if (title)
-            states.push("Title: " + title)
-        if (subtitle)
+        if (prefs.filename && displayName !== filename)
+            states.push("File: " + filename)
+        if (prefs.subtitle && subtitle)
             states.push("Subtitle: " + subtitle)
-        if (composer)
+        if (prefs.composer && composer)
             states.push("Composer: " + composer)
+        if (prefs.measures)
+            states.push("Contains " + score.nmeasures + " Measures")
+        if (prefs.pages)
+            states.push("Contains " + score.npages + " Pages")
+        if (prefs.tracks)
+            states.push("Contains " + score.ntracks + " Tracks")
 
-        states.push("Contains " + score.nmeasures + " Measures")
-        states.push("Contains " + score.npages + " Pages")
-        states.push("Contains " + score.ntracks + " Tracks")
-        stateIndex %= states.length
-
-        var details = "Editing " + name
-        var state = states[stateIndex]
-        var smallText = "Contains " + score.nmeasures + " Measures"
-
-        discord.setActivity({
+        var activity = {
             details: bounded(details),
-            state: bounded(state),
-            timestamps: { start: startedAt },
             assets: {
                 large_image: "musescore4-square",
                 small_image: "musescore4-circle",
                 large_text: "MuseScore 4",
-                small_text: bounded(smallText)
+                small_text: activityMode === "Editing" ? "Composing" : activityMode
             },
             instance: false
-        })
+        }
+        if (states.length) {
+            stateIndex %= states.length
+            activity.state = bounded(states[stateIndex])
+        } else {
+            stateIndex = 0
+        }
+        if (prefs.elapsed)
+            activity.timestamps = { start: startedAt }
+        discord.setActivity(activity)
     }
 }

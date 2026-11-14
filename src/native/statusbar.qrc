@@ -1,6 +1,7 @@
 <RCC>
     <qresource prefix="/discordpresence">
         <file alias="StatusButton.qml">StatusButton.qml</file>
+        <file alias="SettingsWindow.qml">SettingsWindow.qml</file>
         <file alias="discord.svg">discord.svg</file>
         <file alias="discord-off.svg">discord-off.svg</file>
     </qresource>
