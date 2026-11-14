@@ -630,7 +630,7 @@ MuseScore {
             assets: {
                 large_image: "musescore4",
                 large_text: "MuseScore 4",
-                small_image: playing ? "play" : (mode === "Editing" ? "edit" : "view")
+                small_image: playing ? "play" : (mode === "Editing" ? "pencil" : "view")
             },
             instance: false
         }
