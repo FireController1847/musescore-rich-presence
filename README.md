@@ -12,7 +12,7 @@
   <a href="https://musescore.org/"><img src="https://img.shields.io/badge/MuseScore-Studio-1a70b8?style=flat-square" alt="MuseScore Studio"></a>
   <a href="https://discord.com/"><img src="https://img.shields.io/badge/Discord-Rich%20Presence-5865F2?style=flat-square&amp;logo=discord&amp;logoColor=white" alt="Discord Rich Presence"></a>
   <img src="https://img.shields.io/badge/Language-QML-41CD52?style=flat-square&amp;logo=qt&amp;logoColor=white" alt="QML">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-All%20Rights%20Reserved-526b80?style=flat-square" alt="All Rights Reserved"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-526b80?style=flat-square" alt="Apache 2.0"></a>
 </p>
 
 <p align="center">
@@ -155,6 +155,6 @@ All contributions are held to the same standards of correctness, maintainability
 
 ## License and Independence
 
-All rights reserved. See [LICENSE](LICENSE). The Discord outline SVGs are adapted from [Simple Icons](https://github.com/simple-icons/simple-icons/blob/develop/icons/discord.svg) (CC0); Discord trademarks remain the property of their respective owner.
+Licensed under the [Apache License, Version 2.0](LICENSE). The Discord outline SVGs are adapted from [Simple Icons](https://github.com/simple-icons/simple-icons/blob/develop/icons/discord.svg) (CC0); Discord trademarks remain the property of their respective owner.
 
 MuseScore Rich Presence is an independent project and is not affiliated with, endorsed by, or sponsored by MuseScore or Discord.
