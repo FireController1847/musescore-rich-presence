@@ -46,6 +46,10 @@ DiscordIPC::DiscordIPC(QObject *parent) : QObject(parent)
         {QStringLiteral("tracks"), true},
         {QStringLiteral("elapsed"), true},
         {QStringLiteral("playback"), true},
+        {QStringLiteral("playMeasure"), true},
+        {QStringLiteral("playTime"), true},
+        {QStringLiteral("playTempo"), true},
+        {QStringLiteral("playProgress"), true},
         {QStringLiteral("hideWithoutScore"), true},
         {QStringLiteral("rotation"), 5}
     };
@@ -138,7 +142,11 @@ QVariantMap DiscordIPC::playbackSnapshot() const
                     {QStringLiteral("known"), true},
                     {QStringLiteral("playing"), icon == PauseIcon},
                     {QStringLiteral("position"), time.isValid() ? QTime(0, 0).msecsTo(time) : -1},
-                    {QStringLiteral("duration"), max.isValid() ? QTime(0, 0).msecsTo(max) : -1}
+                    {QStringLiteral("duration"), max.isValid() ? QTime(0, 0).msecsTo(max) : -1},
+                    {QStringLiteral("measure"), model->property("measureNumber").toInt()},
+                    {QStringLiteral("measures"), model->property("maxMeasureNumber").toInt()},
+                    {QStringLiteral("beat"), model->property("beatNumber").toInt()},
+                    {QStringLiteral("bpm"), model->property("tempo").toMap().value(QStringLiteral("value")).toInt()}
                 };
             }
         }

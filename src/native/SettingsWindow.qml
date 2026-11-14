@@ -7,7 +7,7 @@ ApplicationWindow {
     id: root
     title: "Discord Rich Presence Settings"
     width: 440
-    height: 430
+    height: 465
     minimumWidth: 360
     minimumHeight: 370
     flags: Qt.Dialog
@@ -29,6 +29,7 @@ ApplicationWindow {
             Layout.fillWidth: true
             TabButton { text: "Activity" }
             TabButton { text: "Score info" }
+            TabButton { text: "Playback" }
             TabButton { text: "Behavior" }
         }
 
@@ -47,7 +48,7 @@ ApplicationWindow {
                 PreferenceCheck { text: "Show playback state"; preferenceKey: "playback" }
                 PreferenceCheck { text: "Show elapsed time"; preferenceKey: "elapsed" }
                 Label {
-                    text: "Playback state distinguishes composing, playing and paused when the transport can be detected."
+                    text: "Playing scores use a separate activity and live playback statistics. Pausing or stopping returns to editing."
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
                     opacity: 0.7
@@ -66,6 +67,22 @@ ApplicationWindow {
                 PreferenceCheck { text: "Track count"; preferenceKey: "tracks" }
                 Label {
                     text: "Title is preferred. Filename is shared only when enabled, including as a fallback for untitled scores."
+                    Layout.fillWidth: true
+                    wrapMode: Text.WordWrap
+                    opacity: 0.7
+                }
+                Item { Layout.fillHeight: true }
+            }
+
+            ColumnLayout {
+                spacing: 4
+                enabled: presenceClient.preferences.playback
+                PreferenceCheck { text: "Current measure and beat"; preferenceKey: "playMeasure" }
+                PreferenceCheck { text: "Playback time and duration"; preferenceKey: "playTime" }
+                PreferenceCheck { text: "Current tempo (BPM)"; preferenceKey: "playTempo" }
+                PreferenceCheck { text: "Show playback progress bar"; preferenceKey: "playProgress" }
+                Label {
+                    text: "Discord uses Listening activities for progress bars. Turn this off to use the Playing activity type instead."
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
                     opacity: 0.7
