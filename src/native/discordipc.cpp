@@ -19,6 +19,7 @@
 #include <QAbstractItemModel>
 #include <QTime>
 #include <QTextDocumentFragment>
+#include <QRegularExpression>
 
 namespace {
 constexpr quint32 Handshake = 0;
@@ -40,6 +41,13 @@ DiscordIPC::DiscordIPC(QObject *parent) : QObject(parent)
         {QStringLiteral("filename"), false},
         {QStringLiteral("title"), true},
         {QStringLiteral("subtitle"), true},
+        {QStringLiteral("lyricist"), true},
+        {QStringLiteral("systems"), true},
+        {QStringLiteral("currentTrack"), true},
+        {QStringLiteral("currentPage"), true},
+        {QStringLiteral("currentKey"), true},
+        {QStringLiteral("currentTime"), true},
+        {QStringLiteral("currentInstrument"), true},
         {QStringLiteral("composer"), true},
         {QStringLiteral("measures"), true},
         {QStringLiteral("pages"), true},
@@ -101,9 +109,19 @@ QString DiscordIPC::plainScoreText(const QString &text) const
 {
     // MuseScore's Text property uses XML-style rich text. Remove formatting
     // and decode escaped characters before publishing the visible heading.
-    if (!text.contains(QLatin1Char('<')) && !text.contains(QLatin1Char('&')))
-        return text.simplified();
-    return QTextDocumentFragment::fromHtml(text).toPlainText().simplified();
+    // Preserve literal and entity-encoded line breaks through HTML parsing,
+    // which would otherwise collapse them. CRLF is one logical newline.
+    static const QRegularExpression breaks(QStringLiteral(
+        R"((?:\r|&#(?:0*13|x0*d);)(?:\n|&#(?:0*10|x0*a);)|[\r\n\x{0085}\x{2028}\x{2029}]|&#(?:0*(?:10|13|133|8232|8233)|x0*(?:a|d|85|2028|2029));|&(?:NewLine);)"),
+        QRegularExpression::CaseInsensitiveOption);
+    QString plain = text;
+    const QChar marker(0xFDD0);
+    plain.replace(breaks, QString(marker));
+    if (plain.contains(QLatin1Char('<')) || plain.contains(QLatin1Char('&')))
+        plain = QTextDocumentFragment::fromHtml(plain).toPlainText();
+    plain.replace(marker, QLatin1Char(' '));
+    plain.replace(breaks, QStringLiteral(" "));
+    return plain;
 }
 
 QVariantMap DiscordIPC::playbackSnapshot() const

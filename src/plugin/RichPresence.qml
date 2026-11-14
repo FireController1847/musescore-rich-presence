@@ -18,7 +18,7 @@ MuseScore {
     property int stateIndex: 0
     property bool hasScore: false
     property double nextRotation: 0
-    property string activityMode: "Editing"
+    property string activityMode: "Viewing"
     property bool idlePublished: false
     property double playbackStart: 0
     property double playbackEnd: 0
@@ -57,7 +57,7 @@ MuseScore {
             root.lastScore = ""
             root.stateIndex = 0
             root.nextRotation = 0
-            root.activityMode = "Editing"
+            root.activityMode = "Viewing"
             root.idlePublished = false
             root.playbackStart = 0
             root.playbackEnd = 0
@@ -141,9 +141,14 @@ MuseScore {
         }
     }
 
+    function singleLine(value) {
+        // Treat CRLF as one newline; preserve consecutive line breaks.
+        return String(value || "").replace(/\r\n|[\r\n\u0085\u2028\u2029]/g, " ")
+    }
+
     function bounded(value) {
         // Discord limits details and state to 128 characters.
-        var result = String(value)
+        var result = singleLine(value)
         if (result.length > 128) {
             result = result.substring(0, 128)
             var last = result.charCodeAt(result.length - 1)
@@ -168,7 +173,7 @@ MuseScore {
                         var element = elements[i]
                         if (element.type === Element.TEXT && Number(element.subStyle) === Number(style)) {
                             var text = discord.plainScoreText(String(element.text || ""))
-                            if (text && placeholders.indexOf(text.toLowerCase()) === -1) {
+                            if (text.trim() && placeholders.indexOf(text.trim().toLowerCase()) === -1) {
                                 // Traversing backwards makes the topmost frame win.
                                 visibleText = text
                                 break
@@ -185,8 +190,8 @@ MuseScore {
         if (visibleText)
             return visibleText
 
-        var fallback = String(metadata || "").trim()
-        return placeholders.indexOf(fallback.toLowerCase()) === -1 ? fallback : ""
+        var fallback = singleLine(metadata)
+        return fallback.trim() && placeholders.indexOf(fallback.trim().toLowerCase()) === -1 ? fallback : ""
     }
 
     function measureAt(score, number) {
@@ -198,26 +203,53 @@ MuseScore {
         return measure
     }
 
-    function systemAt(score, measure) {
+    function layoutAt(score, measure) {
+        var result = { system: 0, page: 0 }
         if (!measure)
-            return 0
+            return result
         try {
             var tick = measure.tick.ticks
             var systems = score.systems
             var number = 0
             for (var i = 0; i < systems.length; i++) {
-                var first = systems[i].firstMeasure
-                var last = systems[i].lastMeasure
+                var system = systems[i]
+                var first = system.firstMeasure
+                var last = system.lastMeasure
                 if (!first || !last)
                     continue
                 number++
-                if (tick >= first.tick.ticks && tick < last.tick.ticks + last.ticks.ticks)
-                    return number
+                if (tick < first.tick.ticks || tick >= last.tick.ticks + last.ticks.ticks)
+                    continue
+                result.system = number
+                var pages = score.pages
+                for (var p = 0; p < pages.length; p++) {
+                    var pageSystems = pages[p].systems
+                    for (var j = 0; j < pageSystems.length; j++) {
+                        if (pageSystems[j].is(system)) {
+                            result.page = pages[p].pageNumber + 1 + score.pageNumberOffset
+                            return result
+                        }
+                    }
+                }
+                break
             }
         } catch (error) {
-            // Keep the measure number when the layout is unavailable.
+            // Logical measure information remains usable without page layout.
         }
-        return 0
+        return result
+    }
+
+    function systemCount(score) {
+        try {
+            var count = 0
+            var systems = score.systems
+            for (var i = 0; i < systems.length; i++)
+                if (systems[i].firstMeasure && systems[i].lastMeasure)
+                    count++
+            return count
+        } catch (error) {
+            return 0
+        }
     }
 
     function playbackSegment(measure, playback) {
@@ -226,7 +258,6 @@ MuseScore {
         var segment = measure.firstSegment
         if (!segment)
             return null
-        // Beat position is internal only; it locates the dynamic marking.
         var denominator = measure.timesigNominal.denominator
         var tick = measure.tick.ticks + Math.max(0, playback.beat - 1)
                    * division * 4 / Math.max(1, denominator)
@@ -235,22 +266,151 @@ MuseScore {
         return segment
     }
 
+    function hasSelection(score) {
+        var selection = score.selection
+        return !!(selection && (selection.isRange ||
+                  (selection.elements && selection.elements.length > 0)))
+    }
+
     function selectedPosition(score) {
         var selection = score.selection
         if (!selection)
             return null
         if (selection.isRange && selection.startSegment)
-            return { segment: selection.startSegment, staff: selection.startStaff }
+            return { segment: selection.startSegment, measure: selection.startSegment.parent,
+                     track: selection.startStaff * 4, staff: selection.startStaff }
         var elements = selection.elements
         if (!elements || !elements.length)
             return null
         var item = elements[0]
+        var track = item.track
         var staff = item.staffIdx
+        var segment = null
+        var measure = null
         for (var i = 0; item && i < 16; i++, item = item.parent) {
             if (item.type === Element.SEGMENT)
-                return { segment: item, staff: staff }
+                segment = item
+            if (item.type === Element.MEASURE) {
+                measure = item
+                break
+            }
         }
-        return null
+        if (!segment && !measure)
+            return null
+        if (!segment && measure)
+            segment = measure.firstSegment
+        return { segment: segment, measure: measure, track: track, staff: staff }
+    }
+
+    function playbackTrack(score, segment) {
+        // Transport is score-wide: use the first track with a chord at the
+        // current or latest notation position in the measure; otherwise a rest.
+        var rest = -1
+        for (var s = segment; s; s = s.prevInMeasure) {
+            for (var track = 0; track < score.ntracks; track++) {
+                var item = s.elementAt(track)
+                if (item && item.type === Element.CHORD)
+                    return track
+                if (rest < 0 && item && item.type === Element.REST)
+                    rest = track
+            }
+        }
+        return rest
+    }
+
+    function keyName(score, staff, segment) {
+        if (!staff || !segment || !staff.isPitchedStaff(segment.fraction))
+            return ""
+        var key = Number(staff.key(segment.fraction))
+        if (key < -7 || key > 7)
+            return ""
+        var major = ["C♭", "G♭", "D♭", "A♭", "E♭", "B♭", "F", "C",
+                     "G", "D", "A", "E", "B", "F♯", "C♯"]
+        var minor = ["A♭", "E♭", "B♭", "F", "C", "G", "D", "A",
+                     "E", "B", "F♯", "C♯", "G♯", "D♯", "A♯"]
+        var mode = -1
+        for (var s = segment; s; s = s.prev) {
+            var item = s.elementAt(staff.idx * 4)
+            if (item && item.type === Element.KEYSIG && !item.trailer) {
+                mode = Number(item.keysig_mode)
+                break
+            }
+        }
+        if (mode === 1 || mode === 8)
+            return major[key + 7] + " Major"
+        if (mode === 2 || mode === 7)
+            return minor[key + 7] + " Minor"
+        // Other modes share the same signature; derive the correctly spelled
+        // tonic from its major scale rather than guessing from the notes.
+        var modes = { 3: [1, "Dorian"], 4: [2, "Phrygian"], 5: [3, "Lydian"],
+                      6: [4, "Mixolydian"], 9: [6, "Locrian"] }
+        if (modes[mode]) {
+            var letters = "CDEFGAB"
+            var tonic = letters[(letters.indexOf(major[key + 7][0]) + modes[mode][0]) % 7]
+            var accidentalOrder = key < 0 ? "BEADGCF" : "FCGDAEB"
+            if (accidentalOrder.substring(0, Math.abs(key)).indexOf(tonic) !== -1)
+                tonic += key < 0 ? "♭" : "♯"
+            return tonic + " " + modes[mode][1]
+        }
+        // A signature alone cannot distinguish a major key from its relative minor.
+        return major[key + 7] + " Major / " + minor[key + 7] + " Minor"
+    }
+
+    function positionInfo(score, measure, segment, track, playback, playing) {
+        var info = { measure: 0, system: 0, track: 0, page: 0,
+                     dynamics: "", bpm: 0, key: "", time: "", instrument: "" }
+        if (!measure)
+            return info
+        info.measure = playing ? playback.measure : measure.no + 1
+        var layout = layoutAt(score, measure)
+        info.system = layout.system
+        info.page = layout.page
+        var staff = null
+        if (track >= 0 && track < score.ntracks) {
+            info.track = track + 1
+            staff = score.staves[Math.floor(track / 4)]
+        }
+        try {
+            var signature = staff && segment ? staff.timeSig(segment.fraction) : null
+            var fraction = signature ? signature.timesig : measure.timesigNominal
+            if (fraction && fraction.denominator > 0)
+                info.time = fraction.numerator + "/" + fraction.denominator
+        } catch (error) {}
+        if (!segment)
+            return info
+        try {
+            info.dynamics = dynamicsAt(segment, staff ? staff.idx : -1)
+        } catch (error) {}
+        try {
+            if (playing && playback.bpm > 0) {
+                info.bpm = playback.bpm
+            } else if (track >= 0 && track < score.ntracks) {
+                var cursor = score.newCursor()
+                cursor.track = track
+                // Exact existing segment, independent cursor: do not change selection.
+                cursor.filter = segment.segmentType
+                cursor.rewindToFraction(segment.fraction)
+                if (cursor.segment && cursor.tick === segment.tick)
+                    info.bpm = Math.round(cursor.tempo * 60)
+            }
+        } catch (error) {}
+        try {
+            info.key = keyName(score, staff, segment)
+        } catch (error) {}
+        try {
+            if (staff && staff.part)
+                info.instrument = discord.plainScoreText(staff.part.instrumentNameAtTick(segment.fraction))
+        } catch (error) {}
+        return info
+    }
+
+    function pushRotation(states, fields) {
+        var values = []
+        for (var i = 0; i < fields.length; i++)
+            if (fields[i] && String(fields[i]).trim())
+                values.push(singleLine(fields[i]))
+        if (values.length)
+            states.push(values.join(" · "))
     }
 
     function dynamicName(value) {
@@ -278,13 +438,8 @@ MuseScore {
         return ""
     }
 
-    function dynamicsAt(score, measure, playback, playing) {
+    function dynamicsAt(segment, staff) {
         try {
-            var position = playing ? null : selectedPosition(score)
-            var staff = position ? position.staff : -1
-            var segment = position ? position.segment : playbackSegment(measure, playback)
-            if (!segment && !playing && !playback.known)
-                return ""
             if (!segment)
                 return ""
             // Use the most recent explicit sustained level. With no staff
@@ -326,7 +481,7 @@ MuseScore {
                 lastScore = ""
                 stateIndex = 0
                 nextRotation = 0
-                activityMode = "Editing"
+                activityMode = "Viewing"
                 playbackStart = 0
                 playbackEnd = 0
                 refreshPlaybackText = true
@@ -362,7 +517,7 @@ MuseScore {
             startedAt = Math.floor(now / 1000)
             stateIndex = 0
             nextRotation = now + prefs.rotation * 1000
-            activityMode = "Editing"
+            activityMode = "Viewing"
             playbackStart = 0
             playbackEnd = 0
             refreshPlaybackText = true
@@ -372,9 +527,9 @@ MuseScore {
             nextRotation = now + prefs.rotation * 1000
         }
 
-        var playback = (prefs.playback || prefs.editDynamics) ? discord.playbackSnapshot() : ({ known: false })
+        var playback = prefs.playback ? discord.playbackSnapshot() : ({ known: false })
         var playing = prefs.playback && playback.known && playback.playing
-        var mode = playing ? "Playing" : "Editing"
+        var mode = playing ? "Playing" : (hasSelection(score) ? "Editing" : "Viewing")
         if (mode !== activityMode) {
             activityMode = mode
             stateIndex = 0
@@ -387,9 +542,10 @@ MuseScore {
         var title = scoreHeading(score, Tid.TITLE, score.title || score.metaTag("workTitle"),
                                  ["untitled score", "untitled", "title"])
         var subtitle = scoreHeading(score, Tid.SUBTITLE, score.metaTag("subtitle"), ["subtitle"])
+        var lyricist = scoreHeading(score, Tid.LYRICIST, score.lyricist || score.metaTag("lyricist"), ["lyricist"])
         var composer = scoreHeading(score, Tid.COMPOSER, score.composer || score.metaTag("composer"),
                                     ["composer / arranger", "composer", "arranger"])
-        var author = String(score.metaTag("arranger") || score.lyricist || score.metaTag("lyricist") || score.metaTag("author") || "").trim()
+        var author = singleLine(score.metaTag("arranger") || score.metaTag("author") || "").trim()
         if (["arranger", "lyricist", "author", "composer / arranger"].indexOf(author.toLowerCase()) !== -1)
             author = ""
         var filename = name.replace(/\\/g, "/").split("/").pop()
@@ -398,49 +554,43 @@ MuseScore {
 
         // Filename sharing is opt-in, even for the primary details line.
         var displayName = prefs.title && title ? title : (prefs.filename ? filename : "")
-        var details = displayName ? activityMode + " " + displayName + (playing ? "" : "...")
-                                  : (playing ? "Playing a score" : "Composing...")
+        var details = playing ? (displayName || "Untitled score")
+                              : (displayName ? mode + " " + displayName + "..." : mode + " a score...")
 
         var listening = playing && prefs.playProgress
-        var currentMeasure = playback.known ? measureAt(score, playback.measure) : null
         var states = []
         if (!playing) {
-            if (prefs.filename && displayName !== filename)
-                states.push("File: " + filename)
-            if (prefs.subtitle && subtitle)
-                states.push("Subtitle: " + subtitle)
-            if (prefs.composer && composer)
-                states.push("Composer: " + composer)
-            if (prefs.measures)
-                states.push("Contains " + score.nmeasures + " Measures")
-            if (prefs.pages)
-                states.push("Contains " + score.npages + " Pages")
-            if (prefs.tracks)
-                states.push("Contains " + score.ntracks + " Tracks")
-            if (prefs.editDynamics) {
-                var editLevel = dynamicsAt(score, currentMeasure, playback, false)
-                if (editLevel)
-                    states.push(editLevel)
-            }
-
+            if (prefs.filename)
+                pushRotation(states, [filename])
+            if (prefs.title)
+                pushRotation(states, [title])
+            if (prefs.subtitle)
+                pushRotation(states, [subtitle])
+            if (prefs.lyricist)
+                pushRotation(states, [lyricist])
+            if (prefs.composer)
+                pushRotation(states, [composer])
+        }
+        if (mode === "Viewing") {
+            var systems = prefs.systems ? systemCount(score) : 0
+            pushRotation(states, [prefs.measures && score.nmeasures > 0 ? score.nmeasures + " Measures" : "",
+                                  systems > 0 ? systems + " Systems" : ""])
+            pushRotation(states, [prefs.tracks && score.ntracks > 0 ? score.ntracks + " Tracks" : "",
+                                  prefs.pages && score.npages > 0 ? score.npages + " Pages" : ""])
         } else {
-            var location = []
-            if (prefs.playMeasure && playback.measure > 0)
-                location.push("Measure " + playback.measure)
-            if (prefs.playSystem) {
-                var system = systemAt(score, currentMeasure)
-                if (system > 0)
-                    location.push("System " + system)
-            }
-            if (location.length)
-                states.push(location.join(" · "))
-            if (prefs.playTempo && playback.bpm > 0)
-                states.push(playback.bpm + " BPM")
-            if (prefs.playDynamics) {
-                var playLevel = dynamicsAt(score, currentMeasure, playback, true)
-                if (playLevel)
-                    states.push(playLevel)
-            }
+            var position = playing ? null : selectedPosition(score)
+            var measure = playing ? measureAt(score, playback.measure) : (position ? position.measure : null)
+            var segment = playing ? playbackSegment(measure, playback) : (position ? position.segment : null)
+            var track = playing ? playbackTrack(score, segment) : (position ? position.track : -1)
+            var info = positionInfo(score, measure, segment, track, playback, playing)
+            pushRotation(states, [prefs.playMeasure && info.measure > 0 ? "Measure " + info.measure : "",
+                                  prefs.playSystem && info.system > 0 ? "System " + info.system : ""])
+            pushRotation(states, [prefs.currentTrack && info.track > 0 ? "Track " + info.track : "",
+                                  prefs.currentPage && info.page > 0 ? "Page " + info.page : ""])
+            pushRotation(states, [(playing ? prefs.playDynamics : prefs.editDynamics) ? info.dynamics : "",
+                                  prefs.playTempo && info.bpm > 0 ? info.bpm + " BPM" : ""])
+            pushRotation(states, [prefs.currentKey ? info.key : "", prefs.currentTime ? info.time : ""])
+            pushRotation(states, [prefs.currentInstrument ? info.instrument : ""])
         }
 
         var activity = {
@@ -481,7 +631,8 @@ MuseScore {
 
             // A visible subtitle can contain the arrangement credit.
             var subtitleCredit = prefs.subtitle && /\bby\b/i.test(subtitle) ? subtitle : ""
-            var credit = prefs.composer ? (author || subtitleCredit || composer) : ""
+            var credit = (prefs.composer ? (author || subtitleCredit || composer) : "") ||
+                         (prefs.lyricist ? lyricist : "")
             if (credit)
                 activity.state = bounded(credit)
         }

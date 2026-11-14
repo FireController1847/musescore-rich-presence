@@ -7,7 +7,7 @@ ApplicationWindow {
     id: root
     title: "Discord Rich Presence Settings"
     width: 440
-    height: 500
+    height: 570
     minimumWidth: 360
     minimumHeight: 370
     flags: Qt.Dialog
@@ -29,7 +29,7 @@ ApplicationWindow {
             Layout.fillWidth: true
             TabButton { text: "Activity" }
             TabButton { text: "Score info" }
-            TabButton { text: "Playback" }
+            TabButton { text: "Position" }
             TabButton { text: "Behavior" }
         }
 
@@ -47,8 +47,9 @@ ApplicationWindow {
                 }
                 PreferenceCheck { text: "Show playback state"; preferenceKey: "playback" }
                 PreferenceCheck { text: "Show elapsed time"; preferenceKey: "elapsed" }
+                PreferenceCheck { text: "Show playback progress bar"; preferenceKey: "playProgress" }
                 Label {
-                    text: "Playing scores use a separate activity. Pausing or stopping returns to editing."
+                    text: "Playing scores use a separate activity. When stopped, any selection means Editing; no selection means Viewing."
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
                     opacity: 0.7
@@ -61,11 +62,12 @@ ApplicationWindow {
                 PreferenceCheck { text: "Score title"; preferenceKey: "title" }
                 PreferenceCheck { text: "Score filename (.mscz)"; preferenceKey: "filename" }
                 PreferenceCheck { text: "Subtitle"; preferenceKey: "subtitle" }
+                PreferenceCheck { text: "Lyricist"; preferenceKey: "lyricist" }
                 PreferenceCheck { text: "Composer / author"; preferenceKey: "composer" }
                 PreferenceCheck { text: "Measure count"; preferenceKey: "measures" }
-                PreferenceCheck { text: "Page count"; preferenceKey: "pages" }
+                PreferenceCheck { text: "System count"; preferenceKey: "systems" }
                 PreferenceCheck { text: "Track count"; preferenceKey: "tracks" }
-                PreferenceCheck { text: "Current dynamics"; preferenceKey: "editDynamics" }
+                PreferenceCheck { text: "Page count"; preferenceKey: "pages" }
                 Label {
                     text: "Title is preferred. Filename is shared only when enabled, including as a fallback for untitled scores."
                     Layout.fillWidth: true
@@ -77,14 +79,18 @@ ApplicationWindow {
 
             ColumnLayout {
                 spacing: 4
-                enabled: presenceClient.preferences.playback
                 PreferenceCheck { text: "Current measure"; preferenceKey: "playMeasure" }
                 PreferenceCheck { text: "Current system"; preferenceKey: "playSystem" }
-                PreferenceCheck { text: "Current dynamics"; preferenceKey: "playDynamics" }
+                PreferenceCheck { text: "Current track"; preferenceKey: "currentTrack" }
+                PreferenceCheck { text: "Current page"; preferenceKey: "currentPage" }
+                PreferenceCheck { text: "Dynamics while editing"; preferenceKey: "editDynamics" }
+                PreferenceCheck { text: "Dynamics while playing"; preferenceKey: "playDynamics" }
                 PreferenceCheck { text: "Current tempo (BPM)"; preferenceKey: "playTempo" }
-                PreferenceCheck { text: "Show playback progress bar"; preferenceKey: "playProgress" }
+                PreferenceCheck { text: "Current key"; preferenceKey: "currentKey" }
+                PreferenceCheck { text: "Current time signature"; preferenceKey: "currentTime" }
+                PreferenceCheck { text: "Current instrument"; preferenceKey: "currentInstrument" }
                 Label {
-                    text: "Listening shows the score title, author, rotating playback statistics and progress bar. Turn off the progress bar to use the Playing activity instead."
+                    text: "Position information rotates while editing or playing. Listening retains the title, author and progress bar."
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
                     opacity: 0.7
