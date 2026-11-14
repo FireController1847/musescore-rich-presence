@@ -9,12 +9,17 @@
 #include <QTimer>
 #include <QVariantMap>
 
+class QSystemTrayIcon;
+class QMenu;
+class QAction;
+
 class DiscordIPC : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool ready READ ready NOTIFY readyChanged)
     Q_PROPERTY(bool enabled READ enabled NOTIFY enabledChanged)
     Q_PROPERTY(QString status READ status NOTIFY statusChanged)
+    Q_PROPERTY(bool trayAvailable READ trayAvailable)
 
 public:
     explicit DiscordIPC(QObject *parent = nullptr);
@@ -24,6 +29,8 @@ public:
     bool enabled() const { return m_enabled; }
     QString status() const { return m_status; }
 
+    bool trayAvailable() const;
+    Q_INVOKABLE bool initializeMonitor(const QString &clientId);
     Q_INVOKABLE void start(const QString &clientId);
     Q_INVOKABLE void stop();
     Q_INVOKABLE void setActivity(const QVariantMap &activity);
@@ -41,6 +48,7 @@ private:
     void receive();
     void setReady(bool ready);
     void setStatus(const QString &status);
+    void updateTray();
     void sendActivity(const QJsonValue &activity);
     void sendFrame(quint32 opcode, const QByteArray &payload);
     QStringList socketPaths() const;
@@ -58,4 +66,9 @@ private:
     bool m_enabled = false;
     bool m_ready = false;
     bool m_hasActivity = false;
+    bool m_monitorInitialized = false;
+    QSystemTrayIcon *m_tray = nullptr;
+    QMenu *m_trayMenu = nullptr;
+    QAction *m_statusAction = nullptr;
+    QAction *m_toggleAction = nullptr;
 };

@@ -90,7 +90,7 @@ No Node.js, intermediate JSON files, external companion processes, or administra
 
 ### Build from source
 
-Requires CMake 3.21+, Ninja, a C++17 compiler, and a Qt development SDK with Core, Network, and Qml matching your MuseScore installation.
+Requires CMake 3.21+, Ninja, a C++17 compiler, and a Qt development SDK with Core, Network, Qml, and Widgets matching your MuseScore installation.
 
 Open the folder in VS Code and install the recommended CMake Tools extension. CMake configures automatically using the `dev` preset; **Build** (or the default Build task) stages the plugin into `dist/`.
 
@@ -124,11 +124,11 @@ The native library has a platform-specific extension. Copy the entire `MuseScore
 
 Alternatively, use the VS Code task **Install plugin (MuseScore user directory)** to build and install directly into the default user plugin directory. Change the destination if your MuseScore preferences use a different path.
 
-Quit MuseScore before replacing the native library. Open Discord Desktop, restart MuseScore, enable the plugin in the Plugins Manager, and invoke **Discord Rich Presence** from the Plugins menu. The status window displays native module loading errors, connection progress, or confirmation that Discord accepted the activity. Closing the status window does not disable Rich Presence. Invoke the plugin again to disable it.
+Quit MuseScore before replacing the native library. Open Discord Desktop, restart MuseScore, enable the plugin in the Plugins Manager, and invoke **Discord Rich Presence** from the Plugins menu. A native menu bar/status tray icon appears after activation on supported desktops. Its check mark indicates accepted activity, an ellipsis indicates waiting or connecting, and a slash indicates disabled. Click the icon to view the current status or enable/disable Rich Presence. The top-level Plugins menu action also toggles it. A status dialog remains available as a fallback on desktops without a tray, or if the native module fails to load.
 
 MuseScore requires the plugin to be invoked once per application session. After activation, it automatically publishes when a score is opened or selected, clears activity when no score is open, and resets the elapsed timer for a different score. MuseScore's plugin manager does not provide an automatic startup hook for legacy QML plugins.
 
-If no activity appears, inspect the status window and MuseScore's application logs for `MuseScore Rich Presence` messages. Listing the plugin in the manager alone does not establish that its native module loaded. Check that Discord activity sharing is enabled and that the Qt SDK version and architecture match MuseScore.
+If no activity appears, inspect the tray menu (or fallback status window) and MuseScore's application logs for `MuseScore Rich Presence` messages. Listing the plugin in the manager alone does not establish that its native module loaded. Check that Discord activity sharing is enabled and that the Qt SDK version and architecture match MuseScore.
 
 > [!NOTE]
 > For the original Windows implementation and its installation instructions, see the [master branch](https://github.com/FireController1847/musescore-rich-presence/tree/master).

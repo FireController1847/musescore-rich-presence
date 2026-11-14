@@ -9,11 +9,10 @@ MuseScore {
     menuPath: "Plugins.Discord Rich Presence"
     description: qsTr("Display your current score on Discord.")
     version: "2.0"
-    categoryCode: "composing"
     thumbnailName: "current_score_info.png"
     requiresScore: false
 
-    property bool enabledPresence: false
+    property bool monitoring: false
     property string lastScore: ""
     property double startedAt: 0
     property int stateIndex: 0
@@ -37,8 +36,18 @@ MuseScore {
     Connections {
         target: root.discord
         function onEnabledChanged() {
-            if (!root.discord.enabled) {
-                root.enabledPresence = false
+            if (!root.monitoring || !root.discord)
+                return
+
+            root.hasScore = false
+            root.lastScore = ""
+            root.stateIndex = 0
+            root.nextRotation = 0
+
+            if (root.discord.enabled) {
+                refresh.start()
+                root.updateSafely()
+            } else {
                 refresh.stop()
             }
         }
@@ -74,13 +83,7 @@ MuseScore {
         id: refresh
         interval: 1000
         repeat: true
-        onTriggered: {
-            try {
-                root.updateActivity()
-            } catch (error) {
-                console.error("MuseScore Rich Presence: score update failed: " + error)
-            }
-        }
+        onTriggered: root.updateSafely()
     }
 
     onRun: {
@@ -88,24 +91,33 @@ MuseScore {
         loadError = ""
         try {
             loadBridge()
-            if (discord.enabled) {
+            if (discord.initializeMonitor("577645453429047314")) {
+                // Only the first QML instance owns score monitoring. The
+                // native singleton and its tray menu can toggle it later.
+                monitoring = true
+                discord.start("577645453429047314")
+            } else if (discord.enabled) {
                 discord.stop()
             } else {
-                enabledPresence = true
-                lastScore = ""
-                stateIndex = 0
-                startedAt = Math.floor(Date.now() / 1000)
                 discord.start("577645453429047314")
-                hasScore = false
-                nextRotation = 0
-                refresh.start()
-                updateActivity()
             }
         } catch (error) {
             loadError = String(error)
             console.error("MuseScore Rich Presence: " + loadError)
         }
-        statusWindow.show()
+
+        // On systems with a tray, the icon/menu is the status UI. Keep a
+        // dialog fallback for missing tray support or native import errors.
+        if (loadError || !discord || !discord.trayAvailable)
+            statusWindow.show()
+    }
+
+    function updateSafely() {
+        try {
+            updateActivity()
+        } catch (error) {
+            console.error("MuseScore Rich Presence: score update failed: " + error)
+        }
     }
 
     function bounded(value) {
@@ -121,7 +133,7 @@ MuseScore {
     }
 
     function updateActivity() {
-        if (!enabledPresence || !discord || !discord.enabled)
+        if (!monitoring || !discord || !discord.enabled)
             return
 
         var score = curScore
