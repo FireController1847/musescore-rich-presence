@@ -92,7 +92,7 @@ No Node.js, intermediate JSON files, external companion processes, or administra
 
 Requires CMake 3.21+, Ninja, a C++17 compiler, and a Qt development SDK with Core, Network, Qml, and Widgets matching your MuseScore installation.
 
-Open the folder in VS Code and install the recommended CMake Tools extension. CMake configures automatically using the `dev` preset; **Build** (or the default Build task) stages the plugin into `dist/`.
+Open the folder in VS Code and install the recommended CMake Tools extension. CMake configures automatically using the `dev` preset; **Build** (or the default Build task) stages the plugin into `dist/` and automatically deploys it to the MuseScore user plugins directory. Quit MuseScore before building so the native library is not in use.
 
 On macOS, the build detects MuseScore's bundled Qt major/minor version and searches the standard `~/Qt` SDK directory. Install the matching SDK once if needed. For example, for MuseScore using Qt 6.10.2:
 
@@ -120,15 +120,15 @@ dist/MuseScoreRichPresence/
     └── libDiscordIPC.dylib
 ```
 
-The native library has a platform-specific extension. Copy the entire `MuseScoreRichPresence` directory into your MuseScore user plugins directory (shown in MuseScore's preferences). Preserve the directory structure.
+The native library has a platform-specific extension. The development preset automatically installs the entire plugin into `~/Documents/MuseScore4/Plugins/MuseScoreRichPresence/` (on Windows, under your user profile's Documents folder). The VS Code **Install plugin (MuseScore user directory)** task is an alias for the normal build.
 
-Alternatively, use the VS Code task **Install plugin (MuseScore user directory)** to build and install directly into the default user plugin directory. Change the destination if your MuseScore preferences use a different path.
+If MuseScore preferences specify a different plugins directory, set `MUSESCORE_PLUGINS_DIR` in your local CMake cache or user preset. For a packaging-only build, configure with `-DMUSESCORE_AUTO_DEPLOY=OFF` and use the staged directory in `dist/`.
 
 Quit MuseScore before replacing the native library. Open Discord Desktop, restart MuseScore, enable the plugin in the Plugins Manager, and invoke **Discord Rich Presence** from the Plugins menu. A native menu bar/status tray icon appears after activation on supported desktops. Its check mark indicates accepted activity, an ellipsis indicates waiting or connecting, and a slash indicates disabled. Click the icon to view the current status or enable/disable Rich Presence. The top-level Plugins menu action also toggles it. A status dialog remains available as a fallback on desktops without a tray, or if the native module fails to load.
 
 MuseScore requires the plugin to be invoked once per application session. After activation, it automatically publishes when a score is opened or selected, clears activity when no score is open, and resets the elapsed timer for a different score. MuseScore's plugin manager does not provide an automatic startup hook for legacy QML plugins.
 
-If no activity appears, inspect the tray menu (or fallback status window) and MuseScore's application logs for `MuseScore Rich Presence` messages. Listing the plugin in the manager alone does not establish that its native module loaded. Check that Discord activity sharing is enabled and that the Qt SDK version and architecture match MuseScore.
+If the plugin is missing from the Plugins Manager, check the configured plugins directory, select all categories, and check both enabled and optional plugins. If no activity appears, inspect the tray menu (or fallback status window) and MuseScore's application logs for `MuseScore Rich Presence` messages. Listing the plugin in the manager alone does not establish that its native module loaded. Check that Discord activity sharing is enabled and that the Qt SDK version and architecture match MuseScore.
 
 > [!NOTE]
 > For the original Windows implementation and its installation instructions, see the [master branch](https://github.com/FireController1847/musescore-rich-presence/tree/master).

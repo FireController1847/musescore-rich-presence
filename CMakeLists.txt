@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.21)
 # Select the active Xcode compiler, not an unrelated Command Line Tools SDK.
 # Only apply the known 27.2 SDK fallback when no SDK was explicitly selected.
 if(CMAKE_HOST_APPLE)
@@ -97,3 +97,27 @@ add_custom_target(stage_plugin ALL
     DEPENDS DiscordIPC
     VERBATIM
 )
+
+# Local development builds also deploy the staged plugin into MuseScore.
+# Override the directory for a custom MuseScore preferences path, or turn
+# deployment off for packaging/CI builds.
+option(MUSESCORE_AUTO_DEPLOY "Install plugin into MuseScore after building" OFF)
+if(MUSESCORE_AUTO_DEPLOY)
+    if(WIN32)
+        set(_musescore_home "$ENV{USERPROFILE}")
+    else()
+        set(_musescore_home "$ENV{HOME}")
+    endif()
+    if(_musescore_home STREQUAL "")
+        message(FATAL_ERROR "Set MUSESCORE_PLUGINS_DIR to your MuseScore user plugins directory.")
+    endif()
+    set(MUSESCORE_PLUGINS_DIR "${_musescore_home}/Documents/MuseScore4/Plugins"
+        CACHE PATH "MuseScore user plugins directory")
+    message(STATUS "Auto-deploying MuseScore plugin to: ${MUSESCORE_PLUGINS_DIR}")
+    add_custom_target(deploy_plugin ALL
+        COMMAND "${CMAKE_COMMAND}" --install "${CMAKE_BINARY_DIR}"
+            --config $<CONFIG> --prefix "${MUSESCORE_PLUGINS_DIR}"
+        DEPENDS stage_plugin
+        VERBATIM
+    )
+endif()

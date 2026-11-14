@@ -31,26 +31,6 @@
         },
         {
             "label": "Install plugin (MuseScore user directory)",
-            "type": "process",
-            "command": "cmake",
-            "args": [
-                "--install",
-                "${workspaceFolder}/build",
-                "--config",
-                "Release",
-                "--prefix",
-                "${env:HOME}/Documents/MuseScore4/Plugins"
-            ],
-            "windows": {
-                "args": [
-                    "--install",
-                    "${workspaceFolder}/build",
-                    "--config",
-                    "Release",
-                    "--prefix",
-                    "${env:USERPROFILE}/Documents/MuseScore4/Plugins"
-                ]
-            },
             "dependsOn": "Build plugin",
             "problemMatcher": []
         }
