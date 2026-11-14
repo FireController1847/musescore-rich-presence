@@ -583,10 +583,13 @@ MuseScore {
             var segment = playing ? playbackSegment(measure, playback) : (position ? position.segment : null)
             var track = playing ? playbackTrack(score, segment) : (position ? position.track : -1)
             var info = positionInfo(score, measure, segment, track, playback, playing)
-            pushRotation(states, [prefs.playMeasure && info.measure > 0 ? "Measure " + info.measure : "",
-                                  prefs.playSystem && info.system > 0 ? "System " + info.system : ""])
-            pushRotation(states, [prefs.currentTrack && info.track > 0 ? "Track " + info.track : "",
-                                  prefs.currentPage && info.page > 0 ? "Page " + info.page : ""])
+            if (playing) {
+                pushRotation(states, [prefs.playSystem && info.system > 0 ? "System " + info.system : "",
+                                      prefs.currentPage && info.page > 0 ? "Page " + info.page : ""])
+            } else {
+                pushRotation(states, [prefs.playMeasure && info.measure > 0 ? "Measure " + info.measure : "",
+                                      prefs.currentTrack && info.track > 0 ? "Track " + info.track : ""])
+            }
             pushRotation(states, [(playing ? prefs.playDynamics : prefs.editDynamics) ? info.dynamics : "",
                                   prefs.playTempo && info.bpm > 0 ? info.bpm + " BPM" : ""])
             pushRotation(states, [prefs.currentKey ? info.key : "", prefs.currentTime ? info.time : ""])

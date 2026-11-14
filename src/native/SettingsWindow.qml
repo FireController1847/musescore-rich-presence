@@ -79,10 +79,10 @@ ApplicationWindow {
 
             ColumnLayout {
                 spacing: 4
-                PreferenceCheck { text: "Current measure"; preferenceKey: "playMeasure" }
-                PreferenceCheck { text: "Current system"; preferenceKey: "playSystem" }
-                PreferenceCheck { text: "Current track"; preferenceKey: "currentTrack" }
-                PreferenceCheck { text: "Current page"; preferenceKey: "currentPage" }
+                PreferenceCheck { text: "Current measure (editing)"; preferenceKey: "playMeasure" }
+                PreferenceCheck { text: "Current track (editing)"; preferenceKey: "currentTrack" }
+                PreferenceCheck { text: "Current system (playback)"; preferenceKey: "playSystem" }
+                PreferenceCheck { text: "Current page (playback)"; preferenceKey: "currentPage" }
                 PreferenceCheck { text: "Dynamics while editing"; preferenceKey: "editDynamics" }
                 PreferenceCheck { text: "Dynamics while playing"; preferenceKey: "playDynamics" }
                 PreferenceCheck { text: "Current tempo (BPM)"; preferenceKey: "playTempo" }
