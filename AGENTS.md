@@ -2,12 +2,12 @@
 
 ## Project and workflow
 
-- MuseScore Rich Presence integrates MuseScore Studio with Discord. Keep the public README human-oriented: installation, usage, features, troubleshooting, AI disclosure, and licensing. Put implementation details here.
-- The native implementation is developed on `embedded`; `master` contains the original Node.js implementation.
+- MuseScore Rich Presence integrates MuseScore Studio with Discord. Keep the public README human-oriented: installation, usage, preview, troubleshooting, AI disclosure, and licensing. Put implementation details here.
+- Develop the current native implementation on `main`. The `previous` branch preserves the older version.
 - Favor small, maintainable changes. Keep QML responsible for score information and activity formatting, and C++ responsible for native integration.
 - Preserve the maintainer's Git identity and append `Co-authored-by: Codex <noreply@openai.com>` to agent-created commits.
 - Do not create tests or custom CI workflows. Builds are permitted; manual verification belongs to the maintainer. Report 2–3 or fewer concise verification items and disclose unverified behavior.
-- Preserve the README title, feature cards, and AI disclosure unless explicitly requested otherwise.
+- Preserve the README title, preview images, and AI disclosure unless explicitly requested otherwise.
 
 ## Architecture
 

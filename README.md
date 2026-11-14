@@ -16,45 +16,19 @@
 </p>
 
 <p align="center">
-  <a href="#features">Features</a> &bull;
   <a href="#preview">Preview</a> &bull;
   <a href="#installation">Installation</a> &bull;
   <a href="#ai-assisted-development">Development</a>
 </p>
 
-> [!IMPORTANT]
-> The native implementation is experimental and targets MuseScore 4. Discord activity has been verified on macOS by the project maintainer; other platforms remain unverified. The original Node.js implementation remains available on the [master branch](https://github.com/FireController1847/musescore-rich-presence/tree/master).
+> [!NOTE]
+> This is the new version of MuseScore Rich Presence for MuseScore Studio 4. If you are looking for an older version, see the [previous branch](https://github.com/FireController1847/musescore-rich-presence/tree/previous).
 
 ## About
 
 MuseScore Rich Presence integrates [MuseScore](https://musescore.org/) with Discord, displaying your current score, musical details, and editing session through Rich Presence.
 
 Whether you're composing, arranging, or transcribing, your Discord profile can reflect the music you're working on.
-
-## Features
-
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <h3>🎼 Current Score</h3>
-      Display the name of the score you're editing, directly on your Discord profile.
-    </td>
-    <td width="50%" valign="top">
-      <h3>🎵 Musical Details</h3>
-      Showcase the score's title, subtitle, composer, measure count, page count, and staff count.
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <h3>🔄 Active States</h3>
-      Automatically cycle through available score details to make your activity more dynamic.
-    </td>
-    <td width="50%" valign="top">
-      <h3>⏱️ Editing Sessions</h3>
-      Display elapsed time for the current score, alongside MuseScore artwork.
-    </td>
-  </tr>
-</table>
 
 ## Preview
 
@@ -64,11 +38,29 @@ Whether you're composing, arranging, or transcribing, your Discord profile can r
   <img src="https://i.imgur.com/Izgtps5.png" width="270" alt="Rich Presence example 3">
 </p>
 
-<p align="center"><em>Examples from the original implementation, showcasing rotating score information.</em></p>
+| # | Viewing | Editing | Listening |
+| :--- | :--- | :--- | :--- |
+| 1 | Measures | Measure · Staff | System · Page |
+| 2 | Systems | Dynamics · BPM | Dynamics · BPM |
+| 3 | Staves | Key · Time Signature | Key · Time Signature |
+| 4 | Pages | Instrument | Instrument · Sustained¹ |
+
+¹ Sustained appears only when an active pedal marking is detected. Playing without the progress bar uses the same rotations, except for sustain detection.
 
 ## Installation
 
 The native plugin targets MuseScore Studio 4.7 and requires Discord Desktop. It runs directly inside MuseScore without Node.js or an external companion application.
+
+### Install from GitHub Releases
+
+1. Download the ZIP for your operating system from the [latest release](https://github.com/FireController1847/musescore-rich-presence/releases/latest):
+   - **macOS:** `MuseScoreRichPresence-<version>-macos-universal.zip` (Apple Silicon and Intel)
+   - **Windows:** `MuseScoreRichPresence-<version>-windows-x64.zip`
+2. Close MuseScore.
+3. Extract the `MuseScoreRichPresence` folder into your MuseScore plugins directory (normally `Documents/MuseScore4/Plugins/`). If updating, replace the existing plugin folder.
+4. Open MuseScore and follow the [instructions below](#enable-the-plugin) to enable the plugin.
+
+The native plugin targets MuseScore Studio 4.7. macOS builds target macOS 13 or later; Windows requires x64. Only download a release asset for a supported platform.
 
 ### Build from source
 
@@ -93,6 +85,8 @@ The build stages the plugin in `dist/MuseScoreRichPresence/` and automatically i
 
 If your installation uses a different Qt SDK or plugins directory, see [build configuration](AGENTS.md#build-and-deployment). To create a distributable macOS or Windows ZIP in `dist/` instead of installing locally, run the VS Code **Publish plugin** task or use the [release preset](AGENTS.md#release-packaging). Windows runtime compatibility is not yet verified.
 
+## Using Rich Presence
+
 ### Enable the plugin
 
 1. Open Discord Desktop and make sure activity sharing is enabled.
@@ -100,11 +94,6 @@ If your installation uses a different Qt SDK or plugins directory, see [build co
 3. Select **Discord Rich Presence** from the Plugins menu.
 
 The plugin needs to be started once each time you launch MuseScore. After that, it follows your active score automatically.
-
-> [!NOTE]
-> For the original Windows implementation and its installation instructions, see the [master branch](https://github.com/FireController1847/musescore-rich-presence/tree/master).
-
-## Using Rich Presence
 
 Once enabled, a Discord icon appears in the notation status bar:
 
