@@ -11,13 +11,11 @@
 #include <QUuid>
 #include <QtEndian>
 #include <QDebug>
-#include <QApplication>
-#include <QAction>
-#include <QIcon>
-#include <QMenu>
-#include <QPainter>
-#include <QPixmap>
-#include <QSystemTrayIcon>
+#include <QGuiApplication>
+#include <QQuickWindow>
+#include <QQmlComponent>
+#include <QQmlContext>
+#include <QQmlEngine>
 
 namespace {
 constexpr quint32 Handshake = 0;
@@ -48,17 +46,21 @@ DiscordIPC::DiscordIPC(QObject *parent) : QObject(parent)
 
 DiscordIPC::~DiscordIPC()
 {
-    stop();
-    if (m_tray) {
-        m_tray->hide();
-        m_tray->setContextMenu(nullptr);
+    m_uiRefresh.stop();
+    for (const auto &item : m_statusItems) {
+        if (item)
+            delete item.data();
     }
-    delete m_trayMenu;
+    stop();
 }
 
-bool DiscordIPC::trayAvailable() const
+bool DiscordIPC::statusBarAvailable() const
 {
-    return m_tray && m_tray->isVisible();
+    for (const auto &item : m_statusItems) {
+        if (item && item->isVisible())
+            return true;
+    }
+    return false;
 }
 
 bool DiscordIPC::initializeMonitor(const QString &clientId)
@@ -68,66 +70,86 @@ bool DiscordIPC::initializeMonitor(const QString &clientId)
 
     m_monitorInitialized = true;
     m_clientId = clientId;
-    if (qobject_cast<QApplication *>(QCoreApplication::instance())
-        && QSystemTrayIcon::isSystemTrayAvailable()) {
-        m_trayMenu = new QMenu;
-        m_statusAction = m_trayMenu->addAction(QStringLiteral("Discord Rich Presence"));
-        m_statusAction->setEnabled(false);
-        m_trayMenu->addSeparator();
-        m_toggleAction = m_trayMenu->addAction(QStringLiteral("Enable Rich Presence"));
-        connect(m_toggleAction, &QAction::triggered, this, [this]() {
-            if (m_enabled)
-                stop();
-            else
-                start(m_clientId);
-        });
-
-        m_tray = new QSystemTrayIcon(this);
-        m_tray->setContextMenu(m_trayMenu);
-        updateTray();
-        m_tray->show();
-    }
+    connect(&m_uiRefresh, &QTimer::timeout, this, &DiscordIPC::refreshStatusBars);
+    m_uiRefresh.start(1000);
+    refreshStatusBars();
     return true;
 }
 
-void DiscordIPC::updateTray()
+void DiscordIPC::toggle()
 {
-    if (!m_tray)
+    if (m_enabled)
+        stop();
+    else
+        start(m_clientId);
+}
+
+void DiscordIPC::refreshStatusBars()
+{
+    for (int i = m_statusItems.size() - 1; i >= 0; --i) {
+        if (!m_statusItems.at(i))
+            m_statusItems.removeAt(i);
+    }
+    for (QWindow *window : QGuiApplication::allWindows()) {
+        auto *quickWindow = qobject_cast<QQuickWindow *>(window);
+        if (quickWindow && quickWindow->isVisible())
+            attachStatusBar(quickWindow->contentItem());
+    }
+}
+
+void DiscordIPC::attachStatusBar(QQuickItem *item)
+{
+    if (!item)
         return;
 
-    // A monochrome template icon adapts to the macOS menu bar appearance.
-    // A check, ellipsis or slash conveys status without relying on color.
-    QPixmap image(44, 44);
-    image.setDevicePixelRatio(2);
-    image.fill(Qt::transparent);
-    {
-        QPainter painter(&image);
-        painter.setRenderHint(QPainter::Antialiasing);
-        painter.setPen(QPen(Qt::black, 1.7, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-        painter.drawRoundedRect(QRectF(2.5, 2.5, 17, 17), 4, 4);
-        if (!m_enabled) {
-            painter.drawLine(QPointF(7, 15), QPointF(15, 7));
-        } else if (m_ready && m_status == QStringLiteral("Discord accepted activity")) {
-            painter.drawLine(QPointF(6.5, 11), QPointF(9.5, 14));
-            painter.drawLine(QPointF(9.5, 14), QPointF(15.5, 8));
-        } else {
-            painter.setPen(Qt::NoPen);
-            painter.setBrush(Qt::black);
-            for (int i = 0; i < 3; ++i)
-                painter.drawEllipse(QPointF(7 + i * 4, 11), 1.1, 1.1);
+    // MuseScore 4's notation bar contains a RowLayout for its controls.
+    // Restrict insertion to that component, not arbitrary layouts.
+    QObject *section = item->property("navigationSection").value<QObject *>();
+    const bool isStatusBar =
+        QByteArray(item->metaObject()->className()).startsWith("NotationStatusBar")
+        || (section && section->property("name").toString() == QStringLiteral("NotationStatusBar"));
+
+    if (isStatusBar) {
+        for (QQuickItem *row : item->childItems()) {
+            if (!row->inherits("QQuickRowLayout"))
+                continue;
+            if (row->property("_discordPresenceAttached").toBool())
+                return;
+
+            QQmlEngine *engine = qmlEngine(row);
+            if (!engine)
+                return;
+
+            row->setProperty("_discordPresenceAttached", true);
+            QQmlComponent component(engine, QUrl(QStringLiteral("qrc:/discordpresence/StatusButton.qml")));
+            if (!component.isReady()) {
+                qWarning().noquote() << "MuseScore Rich Presence: status bar:" << component.errorString();
+                return;
+            }
+
+            auto *context = new QQmlContext(qmlContext(row) ? qmlContext(row) : engine->rootContext(), row);
+            context->setContextProperty(QStringLiteral("presenceClient"), this);
+            QObject *object = component.create(context);
+            auto *button = qobject_cast<QQuickItem *>(object);
+            if (!button) {
+                qWarning().noquote() << "MuseScore Rich Presence: status bar:" << component.errorString();
+                delete object;
+                delete context;
+                return;
+            }
+
+            QQmlEngine::setObjectOwnership(button, QQmlEngine::CppOwnership);
+            button->setParent(row);
+            button->setParentItem(row);
+            context->setParent(button);
+            m_statusItems.append(QPointer<QQuickItem>(button));
+            qInfo() << "MuseScore Rich Presence: attached notation status icon";
+            return;
         }
     }
 
-    QIcon icon(image);
-#ifdef Q_OS_MACOS
-    icon.setIsMask(true);
-#endif
-    m_tray->setIcon(icon);
-    m_tray->setToolTip(QStringLiteral("MuseScore Rich Presence: %1").arg(m_status));
-    const QString summary = m_status.size() > 90 ? m_status.left(87) + QStringLiteral("...") : m_status;
-    m_statusAction->setText(summary);
-    m_toggleAction->setText(m_enabled ? QStringLiteral("Disable Rich Presence")
-                                     : QStringLiteral("Enable Rich Presence"));
+    for (QQuickItem *child : item->childItems())
+        attachStatusBar(child);
 }
 
 QStringList DiscordIPC::socketPaths() const
@@ -173,7 +195,6 @@ void DiscordIPC::start(const QString &clientId)
     m_enabled = true;
     emit enabledChanged();
     setStatus(QStringLiteral("Searching for Discord Desktop"));
-    updateTray();
     qInfo() << "MuseScore Rich Presence: IPC candidates" << m_paths;
     m_retry.start();
     tick();
@@ -200,7 +221,6 @@ void DiscordIPC::stop()
     setStatus(QStringLiteral("Disabled"));
     if (wasEnabled)
         emit enabledChanged();
-    updateTray();
 }
 
 void DiscordIPC::tick()
@@ -269,7 +289,6 @@ void DiscordIPC::setStatus(const QString &status)
     m_status = status;
     qInfo().noquote() << "MuseScore Rich Presence:" << status;
     emit statusChanged();
-    updateTray();
 }
 
 void DiscordIPC::setReady(bool ready)
@@ -278,7 +297,6 @@ void DiscordIPC::setReady(bool ready)
         return;
     m_ready = ready;
     emit readyChanged();
-    updateTray();
 }
 
 void DiscordIPC::setActivity(const QVariantMap &activity)

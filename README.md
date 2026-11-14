@@ -90,7 +90,7 @@ No Node.js, intermediate JSON files, external companion processes, or administra
 
 ### Build from source
 
-Requires CMake 3.21+, Ninja, a C++17 compiler, and a Qt development SDK with Core, Network, Qml, and Widgets matching your MuseScore installation.
+Requires CMake 3.21+, Ninja, a C++17 compiler, and a Qt development SDK with Core, Network, Qml, and Quick matching your MuseScore installation.
 
 Open the folder in VS Code and install the recommended CMake Tools extension. CMake configures automatically using the `dev` preset; **Build** (or the default Build task) stages the plugin into `dist/` and automatically deploys it to the MuseScore user plugins directory. Quit MuseScore before building so the native library is not in use.
 
@@ -124,11 +124,11 @@ The native library has a platform-specific extension. The development preset aut
 
 If MuseScore preferences specify a different plugins directory, set `MUSESCORE_PLUGINS_DIR` in your local CMake cache or user preset. For a packaging-only build, configure with `-DMUSESCORE_AUTO_DEPLOY=OFF` and use the staged directory in `dist/`.
 
-Quit MuseScore before replacing the native library. Open Discord Desktop, restart MuseScore, enable the plugin in the Plugins Manager, and invoke **Discord Rich Presence** from the Plugins menu. A native menu bar/status tray icon appears after activation on supported desktops. Its check mark indicates accepted activity, an ellipsis indicates waiting or connecting, and a slash indicates disabled. Click the icon to view the current status or enable/disable Rich Presence. The top-level Plugins menu action also toggles it. A status dialog remains available as a fallback on desktops without a tray, or if the native module fails to load.
+Quit MuseScore before replacing the native library. Open Discord Desktop, restart MuseScore, enable the plugin in the Plugins Manager, and invoke **Discord Rich Presence** from the Plugins menu. A Discord icon appears in MuseScore's notation status bar after activation. Blurple indicates accepted activity, amber indicates waiting or connecting, and a dimmed icon indicates disabled. Hover for the current status and click to toggle Rich Presence. The top-level Plugins menu action also toggles it. A status dialog remains available if the native module fails to load or the notation bar cannot be found. The integration uses MuseScore's internal notation status-bar layout and may require adjustment for future versions.
 
 MuseScore requires the plugin to be invoked once per application session. After activation, it automatically publishes when a score is opened or selected, clears activity when no score is open, and resets the elapsed timer for a different score. MuseScore's plugin manager does not provide an automatic startup hook for legacy QML plugins.
 
-If the plugin is missing from the Plugins Manager, check the configured plugins directory, select all categories, and check both enabled and optional plugins. If no activity appears, inspect the tray menu (or fallback status window) and MuseScore's application logs for `MuseScore Rich Presence` messages. Listing the plugin in the manager alone does not establish that its native module loaded. Check that Discord activity sharing is enabled and that the Qt SDK version and architecture match MuseScore.
+If the plugin is missing from the Plugins Manager, check the configured plugins directory, select all categories, and check both enabled and optional plugins. If no activity appears, hover over the status icon (or inspect the fallback status window) and MuseScore's application logs for `MuseScore Rich Presence` messages. Listing the plugin in the manager alone does not establish that its native module loaded. Check that Discord activity sharing is enabled and that the Qt SDK version and architecture match MuseScore.
 
 > [!NOTE]
 > For the original Windows implementation and its installation instructions, see the [master branch](https://github.com/FireController1847/musescore-rich-presence/tree/master).
@@ -141,6 +141,6 @@ All contributions are held to the same standards of correctness, maintainability
 
 ## License and Independence
 
-All rights reserved. See [LICENSE](LICENSE).
+All rights reserved. See [LICENSE](LICENSE). The Discord SVG is from [Simple Icons](https://github.com/simple-icons/simple-icons/blob/develop/icons/discord.svg) (CC0); Discord trademarks remain the property of their respective owner.
 
 MuseScore Rich Presence is an independent project and is not affiliated with, endorsed by, or sponsored by MuseScore or Discord.

@@ -96,19 +96,16 @@ MuseScore {
                 // native singleton and its tray menu can toggle it later.
                 monitoring = true
                 discord.start("577645453429047314")
-            } else if (discord.enabled) {
-                discord.stop()
             } else {
-                discord.start("577645453429047314")
+                discord.toggle()
             }
         } catch (error) {
             loadError = String(error)
             console.error("MuseScore Rich Presence: " + loadError)
         }
 
-        // On systems with a tray, the icon/menu is the status UI. Keep a
-        // dialog fallback for missing tray support or native import errors.
-        if (loadError || !discord || !discord.trayAvailable)
+        // The notation bar exists only on the score page.
+        if (loadError || !discord || (curScore && !discord.statusBarAvailable))
             statusWindow.show()
     }
 

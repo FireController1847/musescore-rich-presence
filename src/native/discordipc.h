@@ -8,10 +8,9 @@
 #include <QStringList>
 #include <QTimer>
 #include <QVariantMap>
-
-class QSystemTrayIcon;
-class QMenu;
-class QAction;
+#include <QList>
+#include <QPointer>
+#include <QQuickItem>
 
 class DiscordIPC : public QObject
 {
@@ -19,7 +18,7 @@ class DiscordIPC : public QObject
     Q_PROPERTY(bool ready READ ready NOTIFY readyChanged)
     Q_PROPERTY(bool enabled READ enabled NOTIFY enabledChanged)
     Q_PROPERTY(QString status READ status NOTIFY statusChanged)
-    Q_PROPERTY(bool trayAvailable READ trayAvailable)
+    Q_PROPERTY(bool statusBarAvailable READ statusBarAvailable)
 
 public:
     explicit DiscordIPC(QObject *parent = nullptr);
@@ -29,10 +28,11 @@ public:
     bool enabled() const { return m_enabled; }
     QString status() const { return m_status; }
 
-    bool trayAvailable() const;
+    bool statusBarAvailable() const;
     Q_INVOKABLE bool initializeMonitor(const QString &clientId);
     Q_INVOKABLE void start(const QString &clientId);
     Q_INVOKABLE void stop();
+    Q_INVOKABLE void toggle();
     Q_INVOKABLE void setActivity(const QVariantMap &activity);
     Q_INVOKABLE void clearActivity();
 
@@ -48,7 +48,8 @@ private:
     void receive();
     void setReady(bool ready);
     void setStatus(const QString &status);
-    void updateTray();
+    void refreshStatusBars();
+    void attachStatusBar(QQuickItem *item);
     void sendActivity(const QJsonValue &activity);
     void sendFrame(quint32 opcode, const QByteArray &payload);
     QStringList socketPaths() const;
@@ -67,8 +68,6 @@ private:
     bool m_ready = false;
     bool m_hasActivity = false;
     bool m_monitorInitialized = false;
-    QSystemTrayIcon *m_tray = nullptr;
-    QMenu *m_trayMenu = nullptr;
-    QAction *m_statusAction = nullptr;
-    QAction *m_toggleAction = nullptr;
+    QTimer m_uiRefresh;
+    QList<QPointer<QQuickItem>> m_statusItems;
 };
