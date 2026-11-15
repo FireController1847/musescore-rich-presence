@@ -77,7 +77,7 @@ On macOS, the build looks for the matching Qt SDK in `~/Qt`. For example, if Mus
 uvx --from aqtinstall aqt install-qt mac desktop 6.10.2 clang_64 -O "$HOME/Qt"
 ```
 
-On Windows, install Visual Studio 2022 Build Tools with Desktop development with C++, MSVC x64 target tools and the Qt 6.10.2 MSVC x64 SDK, even on ARM64. The SDK can also be installed using vcpkg; see [Windows build setup](AGENTS.md#windows-development).
+On Windows, install Visual Studio 2022 Build Tools with Desktop development with C++, MSVC x64 target tools and the Qt 6.10.2 MSVC x64 SDK, even on ARM64. Run the VS Code **Install Windows Qt SDK** task to download the matching SDK (requires uv), or **Setup vcpkg** for the alternative dependency manager. See [Windows build setup](AGENTS.md#windows-development).
 
 Close MuseScore before building. In VS Code, install the recommended CMake Tools extension and run the default **Build** task, or use the command line:
 

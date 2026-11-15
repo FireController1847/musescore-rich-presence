@@ -107,6 +107,37 @@
             "problemMatcher": [
                 "$gcc"
             ]
+        },
+        {
+            "label": "Install Windows Qt SDK",
+            "type": "process",
+            "command": "uvx",
+            "args": [
+                "--from",
+                "aqtinstall",
+                "aqt",
+                "install-qt",
+                "windows",
+                "desktop",
+                "6.10.2",
+                "win64_msvc2022_64",
+                "-O",
+                "${env:USERPROFILE}/Qt"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Setup vcpkg",
+            "type": "process",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/scripts/setup-vcpkg.ps1"
+            ],
+            "problemMatcher": []
         }
     ]
 }

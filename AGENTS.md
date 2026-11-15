@@ -76,7 +76,7 @@ The library is `libDiscordIPC.dylib` on macOS and `DiscordIPC.dll` on Windows. T
 
 ### Windows development
 
-Install Visual Studio 2022 (or Build Tools) with Desktop development with C++, a Windows SDK, CMake, and the MSVC v143 x64 target tools (including on ARM64 Windows). The Windows presets use the Visual Studio generator with an explicit x64 target and Release configuration; a Developer PowerShell is not required. Official MuseScore Studio 4.7 Windows releases are x64 only. Windows 11 ARM64 runs that host through x64 emulation, so use the same x64 plugin there. Windows DLLs are not macOS-style universal binaries; do not build a native ARM64 plugin for an x64 MuseScore process. The official Qt 6.10.2 MSVC x64 SDK is preferred to match MuseScore 4.7. For example:
+Install Visual Studio 2022 (or Build Tools) with Desktop development with C++, a Windows SDK, CMake, and the MSVC v143 x64 target tools (including on ARM64 Windows). The Windows presets use the Visual Studio generator with an explicit x64 target and Release configuration; a Developer PowerShell is not required. Official MuseScore Studio 4.7 Windows releases are x64 only. Windows 11 ARM64 runs that host through x64 emulation, so use the same x64 plugin there. Windows DLLs are not macOS-style universal binaries; do not build a native ARM64 plugin for an x64 MuseScore process. The official Qt 6.10.2 MSVC x64 SDK is preferred to match MuseScore 4.7. Run the VS Code **Install Windows Qt SDK** task (requires uv), or use the following commands. If uv is missing, install it with `winget install --id astral-sh.uv -e` and reopen the terminal/VS Code first.
 
 ```powershell
 uvx --from aqtinstall aqt install-qt windows desktop 6.10.2 win64_msvc2022_64 -O "$HOME/Qt"
@@ -84,15 +84,15 @@ cmake --preset dev-windows
 cmake --build --preset dev-windows
 ```
 
-Alternatively, use vcpkg with the repository manifest. It pins the 2026.03.18 baseline containing Qt 6.10.2 and uses the shared `x64-windows` triplet, so the module can link against host Qt. Set up vcpkg once in a separate directory:
+Alternatively, use vcpkg with the repository manifest. It pins the 2026.03.18 baseline containing Qt 6.10.2 and uses the shared `x64-windows` triplet, so the module can link against host Qt. Run the VS Code **Setup vcpkg** task or the equivalent command from the repository root (requires Git):
 
 ```powershell
-git clone --branch 2026.03.18 https://github.com/microsoft/vcpkg.git "$HOME/vcpkg"
-& "$HOME/vcpkg/bootstrap-vcpkg.bat" -disableMetrics
-$env:VCPKG_ROOT = "$HOME/vcpkg"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./scripts/setup-vcpkg.ps1
 ```
 
-From the plugin repository, configure and build with `dev-vcpkg` or `release-vcpkg`. CMake's vcpkg toolchain installs dependencies automatically. The vcpkg Qt build can take substantial time; its runtime compatibility with MuseScore has not been established. Never redistribute vcpkg Qt or its dependency DLLs alongside the plugin; the host supplies Qt. The presets disable vcpkg app-local dependency copying. Official Qt is preferred for public releases until the alternative is verified.
+The script clones the pinned vcpkg release into `$HOME/vcpkg` and bootstraps it if needed, without changing existing checkouts. The repository toolchain wrapper discovers a configured `VCPKG_ROOT`, the home checkout, vcpkg on PATH, or the Visual Studio bundled instance. A separate environment variable is not necessary for the default checkout. An invalid explicit root is reported rather than silently ignored.
+
+From the plugin repository, configure and build with `dev-vcpkg` or `release-vcpkg`. If a previous configure failed with an empty toolchain path, use CMake Tools' **Delete Cache and Reconfigure** or remove the failed vcpkg build directory first. CMake's vcpkg toolchain installs dependencies automatically. The vcpkg Qt build can take substantial time; its runtime compatibility with MuseScore has not been established. Never redistribute vcpkg Qt or its dependency DLLs alongside the plugin; the host supplies Qt. The presets disable vcpkg app-local dependency copying. Official Qt is preferred for public releases until the alternative is verified.
 
 ### Release packaging
 

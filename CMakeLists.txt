@@ -69,7 +69,8 @@ endif()
 if(WIN32 AND NOT CMAKE_PREFIX_PATH AND NOT Qt6_DIR AND NOT CMAKE_TOOLCHAIN_FILE
    AND "$ENV{CMAKE_PREFIX_PATH}" STREQUAL "" AND "$ENV{Qt6_DIR}" STREQUAL "")
     foreach(_qt_root "$ENV{QTDIR}" "$ENV{USERPROFILE}/Qt/6.10.2/msvc2022_64"
-            "C:/Qt/6.10.2/msvc2022_64")
+            "$ENV{USERPROFILE}/Qt/6.10.2/win64_msvc2022_64"
+            "C:/Qt/6.10.2/msvc2022_64" "C:/Qt/6.10.2/win64_msvc2022_64")
         if(EXISTS "${_qt_root}/lib/cmake/Qt6/Qt6Config.cmake")
             list(APPEND CMAKE_PREFIX_PATH "${_qt_root}")
             message(STATUS "Using MuseScore-compatible Qt SDK: ${_qt_root}")
@@ -91,7 +92,15 @@ if(WIN32)
     if(NOT MSVC OR NOT CMAKE_CXX_COMPILER_ARCHITECTURE_ID MATCHES "^(x64|X64|AMD64|amd64)$")
         message(FATAL_ERROR "Windows builds require an x64 MSVC-compatible compiler, even on Windows ARM64. Use the dev-windows or release-windows preset with the VS 2022 x64 target tools.")
     endif()
-    find_package(Qt6 6.10.2 EXACT REQUIRED COMPONENTS Core Network Qml Quick)
+    find_package(Qt6 6.10.2 EXACT QUIET COMPONENTS Core Network Qml Quick)
+    if(NOT Qt6_FOUND)
+        message(FATAL_ERROR
+            "Qt 6.10.2 MSVC x64 SDK is missing or incomplete. "
+            "Run the VS Code Install Windows Qt SDK task (requires uv), or "
+            "install it with: uvx --from aqtinstall aqt install-qt windows desktop 6.10.2 win64_msvc2022_64 -O \"$ENV{USERPROFILE}/Qt\". "
+            "Alternatively select dev-vcpkg after running Setup vcpkg. "
+            "For a custom Qt installation set CMAKE_PREFIX_PATH. ${Qt6_NOT_FOUND_MESSAGE}")
+    endif()
     set(QT_VERSION_MAJOR 6)
 else()
     find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Network Qml Quick)
